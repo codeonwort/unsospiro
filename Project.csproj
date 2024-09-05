@@ -7,6 +7,8 @@
     <Nullable>enable</Nullable>
     <OutputPath>$(SolutionDir)build</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AssemblyName>unsospiro</AssemblyName>
+    <StartupObject>UnSospiro.MainProgram</StartupObject>
   </PropertyGroup>
 
 </Project>

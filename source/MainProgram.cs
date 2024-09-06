@@ -21,8 +21,8 @@
 
         private static void RunFile(string file)
         {
-            string content = File.ReadAllText(Path.GetFullPath(file), System.Text.Encoding.Default);
-            Run(content);
+            string source = File.ReadAllText(Path.GetFullPath(file), System.Text.Encoding.Default);
+            Run(source);
         }
 
         private static void RunPrompt()
@@ -36,10 +36,15 @@
             }
         }
 
-        private static void Run(string content)
+        private static void Run(string source)
         {
-            // TODO: Implement Scanner, scan tokens, and print the tokens.
-            Console.WriteLine($"input: {content}");
+            Scanner scanner = new Scanner(source);
+            List<Token> tokens = scanner.ScanTokens();
+
+            foreach (var token in tokens)
+            {
+                Console.WriteLine($"{token}");
+            }
         }
     }
 }

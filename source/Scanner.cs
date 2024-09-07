@@ -42,7 +42,7 @@
                 case ';': AddToken(TokenType.SEMICOLON); break;
                 case '*': AddToken(TokenType.STAR); break;
                 default:
-                    Console.WriteLine($"Line {line}: Unexpected character {c}");
+                    MainProgram.Error(line, $"Unexpected character {c}.");
                     break;
             }
         }

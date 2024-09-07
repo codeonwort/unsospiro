@@ -64,11 +64,12 @@
                     }
                     break;
                 case ' ': case '\r': case '\t':
-                    // Ignore whitespace
+                    // Ignore whitespace.
                     break;
                 case '\n':
                     ++line;
                     break;
+                case '"': ScanString(); break;
                 default:
                     MainProgram.Error(line, $"Unexpected character {c}.");
                     break;
@@ -93,6 +94,23 @@
         {
             string text = source.Substring(start, current - start);
             tokens.Add(new Token(type, text, literal, line));
+        }
+
+        private void ScanString()
+        {
+            while (Peek() != '"' && !IsAtEnd())
+            {
+                if (Peek() == '\n') ++line; // Allow multi-line string.
+                Advance();
+            }
+            if (IsAtEnd())
+            {
+                MainProgram.Error(line, "Unterminated string.");
+            }
+            Advance(); // Closing quotation mark
+
+            string value = source.Substring(start + 1, current - start - 2);
+            AddToken(TokenType.STRING, value);
         }
 
     }

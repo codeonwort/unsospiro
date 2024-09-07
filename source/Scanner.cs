@@ -53,6 +53,22 @@
                 case '>':
                     AddToken(Match('=') ? TokenType.GREATER_EQUAL : TokenType.GREATER);
                     break;
+                case '/':
+                    if (Match('/'))
+                    {
+                        while (Peek() != '\n' && !IsAtEnd()) Advance();
+                    }
+                    else
+                    {
+                        AddToken(TokenType.SLASH);
+                    }
+                    break;
+                case ' ': case '\r': case '\t':
+                    // Ignore whitespace
+                    break;
+                case '\n':
+                    ++line;
+                    break;
                 default:
                     MainProgram.Error(line, $"Unexpected character {c}.");
                     break;
@@ -68,6 +84,8 @@
             ++current;
             return true;
         }
+
+        private char Peek() => IsAtEnd() ? '\0' : source.ElementAt(current);
 
         private void AddToken(TokenType type) => AddToken(type, null);
 

@@ -15,7 +15,7 @@
 
         public List<Token> ScanTokens()
         {
-            while (!isAtEnd())
+            while (!IsAtEnd())
             {
                 start = current;
                 ScanToken();
@@ -24,7 +24,7 @@
             return tokens;
         }
 
-        private bool isAtEnd() => current >= source.Length;
+        private bool IsAtEnd() => current >= source.Length;
 
         private void ScanToken()
         {
@@ -41,6 +41,18 @@
                 case '+': AddToken(TokenType.PLUS); break;
                 case ';': AddToken(TokenType.SEMICOLON); break;
                 case '*': AddToken(TokenType.STAR); break;
+                case '!':
+                    AddToken(Match('=') ? TokenType.BANG_EQUAL : TokenType.BANG);
+                    break;
+                case '=':
+                    AddToken(Match('=') ? TokenType.EQUAL_EQUAL : TokenType.EQUAL);
+                    break;
+                case '<':
+                    AddToken(Match('=') ? TokenType.LESS_EQUAL : TokenType.LESS);
+                    break;
+                case '>':
+                    AddToken(Match('=') ? TokenType.GREATER_EQUAL : TokenType.GREATER);
+                    break;
                 default:
                     MainProgram.Error(line, $"Unexpected character {c}.");
                     break;
@@ -48,6 +60,14 @@
         }
 
         private char Advance() => source.ElementAt(current++);
+
+        private bool Match(char expected)
+        {
+            if (IsAtEnd()) return false;
+            if (source.ElementAt(current) != expected) return false;
+            ++current;
+            return true;
+        }
 
         private void AddToken(TokenType type) => AddToken(type, null);
 

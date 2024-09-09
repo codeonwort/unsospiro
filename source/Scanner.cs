@@ -71,7 +71,14 @@
                     break;
                 case '"': ScanString(); break;
                 default:
-                    MainProgram.Error(line, $"Unexpected character {c}.");
+                    if (IsDigit(c))
+                    {
+                        ScanNumber();
+                    }
+                    else
+                    {
+                        MainProgram.Error(line, $"Unexpected character {c}.");
+                    }
                     break;
             }
         }
@@ -87,6 +94,10 @@
         }
 
         private char Peek() => IsAtEnd() ? '\0' : source.ElementAt(current);
+
+        private char PeekNext() => (current + 1 >= source.Length) ? '\0' : source.ElementAt(current + 1);
+
+        private bool IsDigit(char c) => '0' <= c && c <= '9';
 
         private void AddToken(TokenType type) => AddToken(type, null);
 
@@ -111,6 +122,18 @@
 
             string value = source.Substring(start + 1, current - start - 2);
             AddToken(TokenType.STRING, value);
+        }
+
+        private void ScanNumber()
+        {
+            while (IsDigit(Peek())) Advance();
+            if (Peek() == '.' && IsDigit(PeekNext()))
+            {
+                // Consume '.'
+                Advance();
+                while (IsDigit(Peek())) Advance();
+            }
+            AddToken(TokenType.NUMBER, Double.Parse(source.Substring(start, current - start)));
         }
 
     }

@@ -2,6 +2,35 @@
 {
     internal class Scanner
     {
+        #region Static
+
+        private static Dictionary<string, TokenType> keywords;
+
+        static Scanner()
+        {
+            keywords = new()
+            {
+                { "and",    TokenType.AND    },
+                { "class",  TokenType.CLASS  },
+                { "else",   TokenType.ELSE   },
+                { "false",  TokenType.FALSE  },
+                { "for",    TokenType.FOR    },
+                { "fun",    TokenType.FUN    },
+                { "if",     TokenType.IF     },
+                { "nil",    TokenType.NIL    },
+                { "or",     TokenType.OR     },
+                { "print",  TokenType.PRINT  },
+                { "return", TokenType.RETURN },
+                { "super",  TokenType.SUPER  },
+                { "this",   TokenType.THIS   },
+                { "true",   TokenType.TRUE   },
+                { "var",    TokenType.VAR    },
+                { "while",  TokenType.WHILE  },
+            };
+        }
+        
+        #endregion
+
         private string source;
         private List<Token> tokens = new();
         private int start = 0;
@@ -75,6 +104,10 @@
                     {
                         ScanNumber();
                     }
+                    else if (IsAlpha(c))
+                    {
+                        ScanIdentifier();
+                    }
                     else
                     {
                         MainProgram.Error(line, $"Unexpected character {c}.");
@@ -98,6 +131,10 @@
         private char PeekNext() => (current + 1 >= source.Length) ? '\0' : source.ElementAt(current + 1);
 
         private bool IsDigit(char c) => '0' <= c && c <= '9';
+
+        private bool IsAlpha(char c) => ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || c == '_';
+
+        private bool IsAlphaNumeric(char c) => IsAlpha(c) || IsDigit(c);
 
         private void AddToken(TokenType type) => AddToken(type, null);
 
@@ -134,6 +171,14 @@
                 while (IsDigit(Peek())) Advance();
             }
             AddToken(TokenType.NUMBER, Double.Parse(source.Substring(start, current - start)));
+        }
+
+        private void ScanIdentifier()
+        {
+            while (IsAlphaNumeric(Peek())) Advance();
+            string text = source.Substring(start, current - start);
+            TokenType type = keywords.GetValueOrDefault(text, TokenType.IDENTIFIER);
+            AddToken(type);
         }
 
     }

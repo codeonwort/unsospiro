@@ -88,7 +88,7 @@ void DefineType(StringBuilder writer, string baseName, string className, string 
     // Field declarations
     foreach (string field in fields)
     {
-        writer.AppendLine($"\t\t\t{field.Trim()};");
+        writer.AppendLine($"\t\t\tinternal {field.Trim()};");
     }
     writer.AppendLine($"\t\t}}");
 }

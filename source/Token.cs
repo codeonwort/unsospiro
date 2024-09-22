@@ -24,10 +24,10 @@
 
     internal class Token
     {
-        TokenType type;
-        string lexeme;
-        object literal;
-        int line;
+        internal TokenType type;
+        internal string lexeme;
+        internal object literal;
+        internal int line;
 
         public Token(TokenType type, string lexeme, object literal, int line)
         {

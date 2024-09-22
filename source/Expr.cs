@@ -21,9 +21,9 @@ namespace UnSospiro
 			{
 				return visitor.VisitBinaryExpr(this);
 			}
-			Expr left;
-			Token op;
-			Expr right;
+			internal Expr left;
+			internal Token op;
+			internal Expr right;
 		}
 		internal class Grouping : Expr
 		{
@@ -35,7 +35,7 @@ namespace UnSospiro
 			{
 				return visitor.VisitGroupingExpr(this);
 			}
-			Expr expression;
+			internal Expr expression;
 		}
 		internal class Literal : Expr
 		{
@@ -47,7 +47,7 @@ namespace UnSospiro
 			{
 				return visitor.VisitLiteralExpr(this);
 			}
-			Object value;
+			internal Object value;
 		}
 		internal class Unary : Expr
 		{
@@ -60,8 +60,8 @@ namespace UnSospiro
 			{
 				return visitor.VisitUnaryExpr(this);
 			}
-			Token op;
-			Expr right;
+			internal Token op;
+			internal Expr right;
 		}
 
 		internal abstract R Accept<R>(Visitor<R> visitor);

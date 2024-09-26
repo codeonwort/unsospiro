@@ -2,7 +2,9 @@
 {
     internal class MainProgram
     {
+        private static Interpreter interpreter = new Interpreter();
         private static bool hadError = false;
+        private static bool hadRuntimeError = false;
 
         private static void Main(string[] args)
         {
@@ -43,6 +45,7 @@
             Run(source);
 
             if (hadError) Environment.Exit(65);
+            if (hadRuntimeError) Environment.Exit(70);
         }
 
         private static void RunPrompt()
@@ -66,7 +69,8 @@
 
             if (hadError) return;
 
-            Console.WriteLine(new AstPrinter().Print(expression));
+            interpreter.Interpret(expression);
+            //Console.WriteLine(new AstPrinter().Print(expression));
             //foreach (var token in tokens) Console.WriteLine($"{token}");
         }
 
@@ -85,6 +89,12 @@
             {
                 Report(token.line, $" at '{token.lexeme}'", message);
             }
+        }
+
+        internal static void RuntimeError(RuntimeException err)
+        {
+            Console.WriteLine($"{err.Message} \n[line {err.token.line}]");
+            hadRuntimeError = true;
         }
 
         private static void Report(int line, string where, string message)

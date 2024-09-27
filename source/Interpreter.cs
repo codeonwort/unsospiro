@@ -72,6 +72,10 @@
                     break;
                 case TokenType.SLASH:
                     CheckNumberOperands(expr.op, left, right);
+                    if ((double)right == 0.0)
+                    {
+                        throw new RuntimeException(expr.op, "Divide by zero.");
+                    }
                     return (double)left / (double)right;
                 case TokenType.STAR:
                     CheckNumberOperands(expr.op, left, right);

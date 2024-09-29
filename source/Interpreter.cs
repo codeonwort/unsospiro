@@ -1,20 +1,24 @@
 ﻿namespace UnSospiro
 {
-    // TODO: Handle runtime errors
-    internal class Interpreter : Expr.Visitor<Object>
+    internal class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<Void>
     {
-        public void Interpret(Expr expression)
+        public void Interpret(List<Stmt> statements)
         {
             try
             {
-                Object value = Evaluate(expression);
-                Console.WriteLine(Stringify(value));
+                foreach (Stmt stmt in statements)
+                {
+                    Execute(stmt);
+                }
             }
             catch (RuntimeException err)
             {
                 MainProgram.RuntimeError(err);
             }
         }
+
+        // ----------------------------------------------------------
+        // Interface: Expr.Visitor
 
         public Object VisitLiteralExpr(Expr.Literal expr)
         {
@@ -82,6 +86,30 @@
                     return (double)left * (double)right;
             }
             return null;
+        }
+
+        // ----------------------------------------------------------
+        // Interface: Stmt.Visitor
+
+        public Void VisitExpressionStmt(Stmt.Expression stmt)
+        {
+            Evaluate(stmt.expression);
+            return Void.Instance;
+        }
+
+        public Void VisitPrintStmt(Stmt.Print stmt)
+        {
+            Object value = Evaluate(stmt.expression);
+            Console.WriteLine(Stringify(value));
+            return Void.Instance;
+        }
+
+        // ----------------------------------------------------------
+        // Utils
+
+        private void Execute(Stmt stmt)
+        {
+            stmt.Accept(this);
         }
 
         private Object Evaluate(Expr expr)

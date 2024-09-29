@@ -22,6 +22,11 @@ DefineAst(outputDir, "Expr", [
     "Unary : Token op, Expr right"
 ]);
 
+DefineAst(outputDir, "Stmt", [
+    "Expression : Expr expression",
+    "Print : Expr expression"
+]);
+
 // outputDir = "C:/some/path/"
 // baseName  = "Expr"
 // types     = ["Binary : Expr left, Token op, Expr right", "Grouping : Expr expression", ...]

@@ -8,6 +8,7 @@ namespace UnSospiro
 			R VisitGroupingExpr(Grouping expr);
 			R VisitLiteralExpr(Literal expr);
 			R VisitUnaryExpr(Unary expr);
+			R VisitVariableExpr(Variable expr);
 		}
 		internal class Binary : Expr
 		{
@@ -62,6 +63,18 @@ namespace UnSospiro
 			}
 			internal Token op;
 			internal Expr right;
+		}
+		internal class Variable : Expr
+		{
+			public Variable(Token name)
+			{
+				this.name = name;
+			}
+			internal override R Accept<R>(Visitor<R> visitor)
+			{
+				return visitor.VisitVariableExpr(this);
+			}
+			internal Token name;
 		}
 
 		internal abstract R Accept<R>(Visitor<R> visitor);

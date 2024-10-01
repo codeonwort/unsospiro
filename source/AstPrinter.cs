@@ -30,6 +30,11 @@ namespace UnSospiro
             return Parenthesize(expr.op.lexeme, expr.right);
         }
 
+        public string VisitVariableExpr(Expr.Variable expr)
+        {
+            return $"var {expr.name.lexeme}";
+        }
+
         private string Parenthesize(string name, params Expr[] exprs)
         {
             StringBuilder writer = new();

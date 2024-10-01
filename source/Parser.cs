@@ -1,7 +1,11 @@
 ﻿namespace UnSospiro
 {
     /*
-    program       -> statement* EOF ;
+    program       -> declaration* EOF ;
+
+    declaration   -> varDecl | statement ;
+
+    varDecl       -> "var" IDENTIFIER ( "=" expression )? ";" ;
 
     statement     -> exprStmt | printStmt;
 
@@ -14,7 +18,7 @@
     term          -> factor ( ( "-" | "+" ) factor )* ;
     factor        -> unary ( ( "/" | "*" ) unary )* ;
     unary         -> ( "!" | "-" ) unary | primary ;
-    primary       -> NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
+    primary       -> NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER;
     */
 
     internal class Parser
@@ -29,15 +33,42 @@
             this.tokens = tokens;
         }
 
-        // TODO: Need to catch ParserException again
         public List<Stmt> Parse()
         {
             List<Stmt> statements = new();
             while (!IsAtEnd())
             {
-                statements.Add(Statement());
+                statements.Add(Declaration());
             }
             return statements;
+        }
+
+        private Stmt Declaration()
+        {
+            try
+            {
+                if (Match(TokenType.VAR)) return VarDeclaration();
+                return Statement();
+            }
+            catch (ParserException e)
+            {
+                Synchronize();
+                return null;
+            }
+        }
+
+        private Stmt VarDeclaration()
+        {
+            Token name = Consume(TokenType.IDENTIFIER, "Expect variable name.");
+
+            Expr initializer = null;
+            if (Match(TokenType.EQUAL))
+            {
+                initializer = Expression();
+            }
+
+            Consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.");
+            return new Stmt.Var(name, initializer);
         }
 
         private Stmt Statement()
@@ -131,6 +162,8 @@
             if (Match(TokenType.NIL)) return new Expr.Literal(null);
 
             if (Match(TokenType.NUMBER, TokenType.STRING)) return new Expr.Literal(Previous().literal);
+
+            if (Match(TokenType.IDENTIFIER)) return new Expr.Variable(Previous());
 
             if (Match(TokenType.LEFT_PAREN))
             {

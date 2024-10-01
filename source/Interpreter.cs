@@ -2,6 +2,8 @@
 {
     internal class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<Void>
     {
+        private GlobalEnvironment environment = new();
+
         public void Interpret(List<Stmt> statements)
         {
             try
@@ -88,6 +90,11 @@
             return null;
         }
 
+        public Object VisitVariableExpr(Expr.Variable expr)
+        {
+            return environment.Get(expr.name);
+        }
+
         // ----------------------------------------------------------
         // Interface: Stmt.Visitor
 
@@ -101,6 +108,18 @@
         {
             Object value = Evaluate(stmt.expression);
             Console.WriteLine(Stringify(value));
+            return Void.Instance;
+        }
+
+        public Void VisitVarStmt(Stmt.Var stmt)
+        {
+            Object value = null; // Default value is nil.
+            if (stmt.initializer != null)
+            {
+                value = Evaluate(stmt.initializer);
+            }
+
+            environment.Define(stmt.name.lexeme, value);
             return Void.Instance;
         }
 

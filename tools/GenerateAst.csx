@@ -16,6 +16,7 @@ if (cmdArgs.Length != 3) // 3rd argument because 'csi GenerateAst.csx <output di
 string outputDir = cmdArgs[2];
 
 DefineAst(outputDir, "Expr", [
+    "Assign : Token name, Expr value",
     "Binary : Expr left, Token op, Expr right",
     "Grouping : Expr expression",
     "Literal : Object value",

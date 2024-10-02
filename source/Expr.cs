@@ -4,11 +4,26 @@ namespace UnSospiro
 	{
 		internal interface Visitor<R>
 		{
+			R VisitAssignExpr(Assign expr);
 			R VisitBinaryExpr(Binary expr);
 			R VisitGroupingExpr(Grouping expr);
 			R VisitLiteralExpr(Literal expr);
 			R VisitUnaryExpr(Unary expr);
 			R VisitVariableExpr(Variable expr);
+		}
+		internal class Assign : Expr
+		{
+			public Assign(Token name, Expr value)
+			{
+				this.name = name;
+				this.value = value;
+			}
+			internal override R Accept<R>(Visitor<R> visitor)
+			{
+				return visitor.VisitAssignExpr(this);
+			}
+			internal Token name;
+			internal Expr value;
 		}
 		internal class Binary : Expr
 		{

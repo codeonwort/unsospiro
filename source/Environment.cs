@@ -11,6 +11,17 @@ namespace UnSospiro
             values.Add(name, value);
         }
 
+        public void Assign(Token name, Object value)
+        {
+            if (values.ContainsKey(name.lexeme))
+            {
+                values[name.lexeme] = value;
+                return;
+            }
+
+            throw new RuntimeException(name, $"Undefined variable '{name.lexeme}'.");
+        }
+
         public Object Get(Token name)
         {
             if (values.TryGetValue(name.lexeme, out Object value))

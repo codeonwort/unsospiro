@@ -12,7 +12,8 @@
     exprStmt      -> expression ;
     printStmt     -> "print" expression ";" ;
 
-    expression    -> equality ;
+    expression    -> assignment ;
+    assignment    -> IDENTIFIER "=" assignment | equality ;
     equality      -> comparison ( ( "!=" | "==" ) comparison )* ;
     comparison    -> term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
     term          -> factor ( ( "-" | "+" ) factor )* ;
@@ -93,7 +94,28 @@
 
         private Expr Expression()
         {
-            return Equality();
+            return Assignment();
+        }
+
+        private Expr Assignment()
+        {
+            Expr expr = Equality();
+
+            if (Match(TokenType.EQUAL))
+            {
+                Token equals = Previous();
+                Expr value = Assignment();
+
+                if (expr is Expr.Variable)
+                {
+                    Token name = ((Expr.Variable)expr).name;
+                    return new Expr.Assign(name, value);
+                }
+
+                Error(equals, "Invalid assignment target.");
+            }
+
+            return expr;
         }
 
         private Expr Equality()

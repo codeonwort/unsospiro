@@ -95,6 +95,13 @@
             return environment.Get(expr.name);
         }
 
+        public Object VisitAssignExpr(Expr.Assign expr)
+        {
+            Object value = Evaluate(expr.value);
+            environment.Assign(expr.name, value);
+            return value;
+        }
+
         // ----------------------------------------------------------
         // Interface: Stmt.Visitor
 

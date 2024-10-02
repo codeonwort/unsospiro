@@ -9,6 +9,11 @@ namespace UnSospiro
             return expr.Accept(this);
         }
 
+        public string VisitAssignExpr(Expr.Assign expr)
+        {
+            return Parenthesize($"assign {expr.name.lexeme}", expr.value);
+        }
+
         public string VisitBinaryExpr(Expr.Binary expr)
         {
             return Parenthesize(expr.op.lexeme, expr.left, expr.right);

@@ -2,7 +2,7 @@
 {
     internal class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<Void>
     {
-        private GlobalEnvironment environment = new();
+        private Env environment = new();
 
         public void Interpret(List<Stmt> statements)
         {

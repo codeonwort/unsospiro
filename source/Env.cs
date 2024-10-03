@@ -1,8 +1,6 @@
-﻿using System.Collections;
-
-namespace UnSospiro
+﻿namespace UnSospiro
 {
-    internal class GlobalEnvironment
+    internal class Env
     {
         private Dictionary<string, Object> values = new();
 

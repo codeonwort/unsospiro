@@ -2,7 +2,18 @@
 {
     internal class Env
     {
+        Env enclosing;
         private Dictionary<string, Object> values = new();
+
+        public Env()
+        {
+            this.enclosing = null;
+        }
+
+        public Env(Env enclosing)
+        {
+            this.enclosing = enclosing;
+        }
 
         public void Define(string name, Object value)
         {
@@ -17,6 +28,12 @@
                 return;
             }
 
+            if (enclosing != null)
+            {
+                enclosing.Assign(name, value);
+                return;
+            }
+
             throw new RuntimeException(name, $"Undefined variable '{name.lexeme}'.");
         }
 
@@ -26,6 +43,9 @@
             {
                 return value;
             }
+
+            if (enclosing != null) return enclosing.Get(name);
+
             throw new RuntimeException(name, $"Undefined variable '{name.lexeme}'.");
         }
     }

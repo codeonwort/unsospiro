@@ -105,6 +105,12 @@
         // ----------------------------------------------------------
         // Interface: Stmt.Visitor
 
+        public Void VisitBlockStmt(Stmt.Block stmt)
+        {
+            ExecuteBlock(stmt.statements, new Env(environment));
+            return Void.Instance;
+        }
+
         public Void VisitExpressionStmt(Stmt.Expression stmt)
         {
             Evaluate(stmt.expression);
@@ -132,6 +138,23 @@
 
         // ----------------------------------------------------------
         // Utils
+
+        private void ExecuteBlock(List<Stmt> statements, Env environment)
+        {
+            Env previous = this.environment;
+            try
+            {
+                this.environment = environment;
+                foreach (Stmt statement in statements)
+                {
+                    Execute(statement);
+                }
+            }
+            finally
+            {
+                this.environment = previous;
+            }
+        }
 
         private void Execute(Stmt stmt)
         {

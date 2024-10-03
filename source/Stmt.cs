@@ -4,9 +4,22 @@ namespace UnSospiro
 	{
 		internal interface Visitor<R>
 		{
+			R VisitBlockStmt(Block stmt);
 			R VisitExpressionStmt(Expression stmt);
 			R VisitPrintStmt(Print stmt);
 			R VisitVarStmt(Var stmt);
+		}
+		internal class Block : Stmt
+		{
+			public Block(List<Stmt> statements)
+			{
+				this.statements = statements;
+			}
+			internal override R Accept<R>(Visitor<R> visitor)
+			{
+				return visitor.VisitBlockStmt(this);
+			}
+			internal List<Stmt> statements;
 		}
 		internal class Expression : Stmt
 		{

@@ -6,6 +6,7 @@ namespace UnSospiro
 		{
 			R VisitBlockStmt(Block stmt);
 			R VisitExpressionStmt(Expression stmt);
+			R VisitIfStmt(If stmt);
 			R VisitPrintStmt(Print stmt);
 			R VisitVarStmt(Var stmt);
 		}
@@ -32,6 +33,22 @@ namespace UnSospiro
 				return visitor.VisitExpressionStmt(this);
 			}
 			internal Expr expression;
+		}
+		internal class If : Stmt
+		{
+			public If(Expr condition, Stmt thenBranch, Stmt elseBranch)
+			{
+				this.condition = condition;
+				this.thenBranch = thenBranch;
+				this.elseBranch = elseBranch;
+			}
+			internal override R Accept<R>(Visitor<R> visitor)
+			{
+				return visitor.VisitIfStmt(this);
+			}
+			internal Expr condition;
+			internal Stmt thenBranch;
+			internal Stmt elseBranch;
 		}
 		internal class Print : Stmt
 		{

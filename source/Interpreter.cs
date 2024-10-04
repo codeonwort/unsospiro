@@ -105,6 +105,19 @@
         // ----------------------------------------------------------
         // Interface: Stmt.Visitor
 
+        public Void VisitIfStmt(Stmt.If stmt)
+        {
+            if (IsTruthy(Evaluate(stmt.condition)))
+            {
+                Execute(stmt.thenBranch);
+            }
+            else if (stmt.elseBranch != null)
+            {
+                Execute(stmt.elseBranch);
+            }
+            return Void.Instance;
+        }
+
         public Void VisitBlockStmt(Stmt.Block stmt)
         {
             ExecuteBlock(stmt.statements, new Env(environment));

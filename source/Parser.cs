@@ -7,10 +7,12 @@
 
     varDecl       -> "var" IDENTIFIER ( "=" expression )? ";" ;
 
-    statement     -> exprStmt | printStmt;
+    statement     -> exprStmt | ifStmt | printStmt | block;
 
     exprStmt      -> expression ;
+    ifStmt        -> "if" "(" expression ")" statement ( "else" statement )? ;
     printStmt     -> "print" expression ";" ;
+    block         -> "{" declaration* "}" ;
 
     expression    -> assignment ;
     assignment    -> IDENTIFIER "=" assignment | equality ;
@@ -74,9 +76,26 @@
 
         private Stmt Statement()
         {
+            if (Match(TokenType.IF)) return IfStatement();
             if (Match(TokenType.PRINT)) return PrintStatement();
             if (Match(TokenType.LEFT_BRACE)) return new Stmt.Block(Block());
             return ExpressionStatement();
+        }
+
+        private Stmt IfStatement()
+        {
+            Consume(TokenType.LEFT_PAREN, "Expect '(' after 'if'.");
+            Expr condition = Expression();
+            Consume(TokenType.RIGHT_PAREN, "Expect ')' after if condition.");
+
+            Stmt thenBranch = Statement();
+            Stmt elseBranch = null;
+            if (Match(TokenType.ELSE))
+            {
+                elseBranch = Statement();
+            }
+
+            return new Stmt.If(condition, thenBranch, elseBranch);
         }
 
         private Stmt PrintStatement()

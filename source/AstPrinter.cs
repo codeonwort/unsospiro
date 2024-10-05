@@ -40,6 +40,15 @@ namespace UnSospiro
             return $"var {expr.name.lexeme}";
         }
 
+        public string VisitLogicalExpr(Expr.Logical expr)
+        {
+            if (expr.op.type == TokenType.OR)
+            {
+                return Parenthesize("or", expr.left, expr.right);
+            }
+            return Parenthesize("and", expr.left, expr.right);
+        }
+
         private string Parenthesize(string name, params Expr[] exprs)
         {
             StringBuilder writer = new();

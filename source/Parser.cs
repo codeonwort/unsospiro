@@ -15,7 +15,9 @@
     block         -> "{" declaration* "}" ;
 
     expression    -> assignment ;
-    assignment    -> IDENTIFIER "=" assignment | equality ;
+    assignment    -> IDENTIFIER "=" assignment | logic_or ;
+    logic_or      -> logic_and ( "or" logic_and )* ;
+    logic_and     -> equality ( "and" equality )* ;
     equality      -> comparison ( ( "!=" | "==" ) comparison )* ;
     comparison    -> term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
     term          -> factor ( ( "-" | "+" ) factor )* ;
@@ -132,7 +134,7 @@
 
         private Expr Assignment()
         {
-            Expr expr = Equality();
+            Expr expr = Or();
 
             if (Match(TokenType.EQUAL))
             {
@@ -146,6 +148,34 @@
                 }
 
                 Error(equals, "Invalid assignment target.");
+            }
+
+            return expr;
+        }
+
+        private Expr Or()
+        {
+            Expr expr = And();
+
+            while (Match(TokenType.OR))
+            {
+                Token op = Previous();
+                Expr right = And();
+                expr = new Expr.Logical(expr, op, right);
+            }
+
+            return expr;
+        }
+
+        private Expr And()
+        {
+            Expr expr = Equality();
+
+            while (Match(TokenType.AND))
+            {
+                Token op = Previous();
+                Expr right = Equality();
+                expr = new Expr.Logical(expr, op, right);
             }
 
             return expr;

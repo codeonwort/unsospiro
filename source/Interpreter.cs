@@ -102,6 +102,22 @@
             return value;
         }
 
+        public Object VisitLogicalExpr(Expr.Logical expr)
+        {
+            Object left = Evaluate(expr.left);
+
+            if (expr.op.type == TokenType.OR)
+            {
+                if (IsTruthy(left)) return left;
+            }
+            else
+            {
+                if (!IsTruthy(left)) return left;
+            }
+
+            return Evaluate(expr.right);
+        }
+
         // ----------------------------------------------------------
         // Interface: Stmt.Visitor
 

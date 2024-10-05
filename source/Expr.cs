@@ -8,6 +8,7 @@ namespace UnSospiro
 			R VisitBinaryExpr(Binary expr);
 			R VisitGroupingExpr(Grouping expr);
 			R VisitLiteralExpr(Literal expr);
+			R VisitLogicalExpr(Logical expr);
 			R VisitUnaryExpr(Unary expr);
 			R VisitVariableExpr(Variable expr);
 		}
@@ -64,6 +65,22 @@ namespace UnSospiro
 				return visitor.VisitLiteralExpr(this);
 			}
 			internal Object value;
+		}
+		internal class Logical : Expr
+		{
+			public Logical(Expr left, Token op, Expr right)
+			{
+				this.left = left;
+				this.op = op;
+				this.right = right;
+			}
+			internal override R Accept<R>(Visitor<R> visitor)
+			{
+				return visitor.VisitLogicalExpr(this);
+			}
+			internal Expr left;
+			internal Token op;
+			internal Expr right;
 		}
 		internal class Unary : Expr
 		{

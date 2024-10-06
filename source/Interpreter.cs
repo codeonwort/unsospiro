@@ -165,6 +165,15 @@
             return Void.Instance;
         }
 
+        public Void VisitWhileStmt(Stmt.While stmt)
+        {
+            while (IsTruthy(Evaluate(stmt.condition))) 
+            {
+                Execute(stmt.body);
+            }
+            return Void.Instance;
+        }
+
         // ----------------------------------------------------------
         // Utils
 

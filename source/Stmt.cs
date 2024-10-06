@@ -9,6 +9,7 @@ namespace UnSospiro
 			R VisitIfStmt(If stmt);
 			R VisitPrintStmt(Print stmt);
 			R VisitVarStmt(Var stmt);
+			R VisitWhileStmt(While stmt);
 		}
 		internal class Block : Stmt
 		{
@@ -75,6 +76,20 @@ namespace UnSospiro
 			}
 			internal Token name;
 			internal Expr initializer;
+		}
+		internal class While : Stmt
+		{
+			public While(Expr condition, Stmt body)
+			{
+				this.condition = condition;
+				this.body = body;
+			}
+			internal override R Accept<R>(Visitor<R> visitor)
+			{
+				return visitor.VisitWhileStmt(this);
+			}
+			internal Expr condition;
+			internal Stmt body;
 		}
 
 		internal abstract R Accept<R>(Visitor<R> visitor);

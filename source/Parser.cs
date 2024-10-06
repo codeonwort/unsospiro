@@ -7,11 +7,12 @@
 
     varDecl       -> "var" IDENTIFIER ( "=" expression )? ";" ;
 
-    statement     -> exprStmt | ifStmt | printStmt | block;
+    statement     -> exprStmt | ifStmt | printStmt | whileStmt | block;
 
     exprStmt      -> expression ;
     ifStmt        -> "if" "(" expression ")" statement ( "else" statement )? ;
     printStmt     -> "print" expression ";" ;
+    whileStmt     -> "while" "(" expression ")" statement ;
     block         -> "{" declaration* "}" ;
 
     expression    -> assignment ;
@@ -80,6 +81,7 @@
         {
             if (Match(TokenType.IF)) return IfStatement();
             if (Match(TokenType.PRINT)) return PrintStatement();
+            if (Match(TokenType.WHILE)) return WhileStatement();
             if (Match(TokenType.LEFT_BRACE)) return new Stmt.Block(Block());
             return ExpressionStatement();
         }
@@ -105,6 +107,17 @@
             Expr value = Expression();
             Consume(TokenType.SEMICOLON, "Expect ';' after value.");
             return new Stmt.Print(value);
+        }
+
+        private Stmt WhileStatement()
+        {
+            Consume(TokenType.LEFT_PAREN, "Expect '(' after 'while'.");
+            Expr condition = Expression();
+            Consume(TokenType.RIGHT_PAREN, "Expect ')' after condition.");
+
+            Stmt body = Statement();
+
+            return new Stmt.While(condition, body);
         }
 
         private List<Stmt> Block()

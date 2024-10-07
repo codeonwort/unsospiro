@@ -7,9 +7,11 @@
 
     varDecl       -> "var" IDENTIFIER ( "=" expression )? ";" ;
 
-    statement     -> exprStmt | ifStmt | printStmt | whileStmt | block;
+    statement     -> exprStmt | forStmt | ifStmt | printStmt | whileStmt | block;
 
     exprStmt      -> expression ;
+    // for statement has 3 clauses; initializer clause, condition clause, increment clause.
+    forStmt       -> "for" "(" ( varDecl | exprStmt | ";" ) expression? ";" expression? ")" statement ;
     ifStmt        -> "if" "(" expression ")" statement ( "else" statement )? ;
     printStmt     -> "print" expression ";" ;
     whileStmt     -> "while" "(" expression ")" statement ;
@@ -79,11 +81,66 @@
 
         private Stmt Statement()
         {
+            if (Match(TokenType.FOR)) return ForStatement();
             if (Match(TokenType.IF)) return IfStatement();
             if (Match(TokenType.PRINT)) return PrintStatement();
             if (Match(TokenType.WHILE)) return WhileStatement();
             if (Match(TokenType.LEFT_BRACE)) return new Stmt.Block(Block());
             return ExpressionStatement();
+        }
+
+        // Desugaring: Convert a for loop to a while loop.
+        private Stmt ForStatement()
+        {
+            Consume(TokenType.LEFT_PAREN, "Expect '(' after 'for'.");
+
+            Stmt initializer;
+            if (Match(TokenType.SEMICOLON))
+            {
+                initializer = null;
+            }
+            else if (Match(TokenType.VAR))
+            {
+                initializer = VarDeclaration();
+            }
+            else
+            {
+                initializer = ExpressionStatement();
+            }
+
+            Expr condition = null;
+            if (!Check(TokenType.SEMICOLON))
+            {
+                condition = Expression();
+            }
+            Consume(TokenType.SEMICOLON, "Expect ';' after loop condition.");
+
+            Expr increment = null;
+            if (!Check(TokenType.RIGHT_PAREN))
+            {
+                increment = Expression();
+            }
+            Consume(TokenType.RIGHT_PAREN, "Expect ')' after for clauses.");
+
+            Stmt body = Statement();
+
+            if (increment != null)
+            {
+                body = new Stmt.Block([body, new Stmt.Expression(increment)]);
+            }
+
+            if (condition == null)
+            {
+                condition = new Expr.Literal(true);
+            }
+            body = new Stmt.While(condition, body);
+
+            if (initializer != null)
+            {
+                body = new Stmt.Block([initializer, body]);
+            }
+
+            return body;
         }
 
         private Stmt IfStatement()

@@ -118,6 +118,31 @@
             return Evaluate(expr.right);
         }
 
+        public Object VisitCallExpr(Expr.Call expr)
+        {
+            Object callee = Evaluate(expr.callee);
+
+            List<Object> arguments = new();
+            foreach (Expr argument in expr.arguments)
+            {
+                arguments.Add(Evaluate(argument));
+            }
+
+            if (!(callee is Callable))
+            {
+                throw new RuntimeException(expr.paren, "Can only call functions and classes.");
+            }
+
+            Callable function = (Callable)callee;
+
+            if (arguments.Count != function.Arity())
+            {
+                throw new RuntimeException(expr.paren, $"Expected {function.Arity()} arguments but got {arguments.Count}.");
+            }
+
+            return function.Call(this, arguments);
+        }
+
         // ----------------------------------------------------------
         // Interface: Stmt.Visitor
 

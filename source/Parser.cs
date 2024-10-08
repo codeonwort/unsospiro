@@ -17,6 +17,7 @@
     whileStmt     -> "while" "(" expression ")" statement ;
     block         -> "{" declaration* "}" ;
 
+    arguments     -> expression ( "," expression )* ;
     expression    -> assignment ;
     assignment    -> IDENTIFIER "=" assignment | logic_or ;
     logic_or      -> logic_and ( "or" logic_and )* ;
@@ -25,8 +26,9 @@
     comparison    -> term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
     term          -> factor ( ( "-" | "+" ) factor )* ;
     factor        -> unary ( ( "/" | "*" ) unary )* ;
-    unary         -> ( "!" | "-" ) unary | primary ;
-    primary       -> NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER;
+    unary         -> ( "!" | "-" ) unary | call ;
+    call          -> primary ( "(" arguments? ")" )* ;
+    primary       -> NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER ;
     */
 
     internal class Parser
@@ -307,7 +309,46 @@
                 Expr right = Unary();
                 return new Expr.Unary(op, right);
             }
-            return Primary();
+            return Call();
+        }
+
+        private Expr Call()
+        {
+            Expr expr = Primary();
+
+            while (true)
+            {
+                if (Match(TokenType.LEFT_PAREN))
+                {
+                    expr = FinishCall(expr);
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            return expr;
+        }
+
+        private Expr FinishCall(Expr callee)
+        {
+            List<Expr> arguments = new();
+            if (!Check(TokenType.RIGHT_PAREN))
+            {
+                do
+                {
+                    if (arguments.Count >= 255)
+                    {
+                        Error(Peek(), "Can't have more than 255 arguments.");
+                    }
+                    arguments.Add(Expression());
+                }
+                while (Match(TokenType.COMMA));
+            }
+            Token paren = Consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.");
+
+            return new Expr.Call(callee, paren, arguments);
         }
 
         private Expr Primary()

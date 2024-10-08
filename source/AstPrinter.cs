@@ -49,6 +49,17 @@ namespace UnSospiro
             return Parenthesize("and", expr.left, expr.right);
         }
 
+        public string VisitCallExpr(Expr.Call expr)
+        {
+            Expr[] calleeAndArgs = new Expr[expr.arguments.Count + 1];
+            calleeAndArgs[0] = expr.callee;
+            for (int i = 0; i < expr.arguments.Count; ++i)
+            {
+                calleeAndArgs[i + 1] = expr.arguments[i];
+            }
+            return Parenthesize("call", calleeAndArgs);
+        }
+
         private string Parenthesize(string name, params Expr[] exprs)
         {
             StringBuilder writer = new();

@@ -6,6 +6,7 @@ namespace UnSospiro
 		{
 			R VisitAssignExpr(Assign expr);
 			R VisitBinaryExpr(Binary expr);
+			R VisitCallExpr(Call expr);
 			R VisitGroupingExpr(Grouping expr);
 			R VisitLiteralExpr(Literal expr);
 			R VisitLogicalExpr(Logical expr);
@@ -41,6 +42,22 @@ namespace UnSospiro
 			internal Expr left;
 			internal Token op;
 			internal Expr right;
+		}
+		internal class Call : Expr
+		{
+			public Call(Expr callee, Token paren, List<Expr> arguments)
+			{
+				this.callee = callee;
+				this.paren = paren;
+				this.arguments = arguments;
+			}
+			internal override R Accept<R>(Visitor<R> visitor)
+			{
+				return visitor.VisitCallExpr(this);
+			}
+			internal Expr callee;
+			internal Token paren;
+			internal List<Expr> arguments;
 		}
 		internal class Grouping : Expr
 		{

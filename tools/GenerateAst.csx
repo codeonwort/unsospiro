@@ -18,6 +18,7 @@ string outputDir = cmdArgs[2];
 DefineAst(outputDir, "Expr", [
     "Assign : Token name, Expr value",
     "Binary : Expr left, Token op, Expr right",
+    "Call : Expr callee, Token paren, List<Expr> arguments",
     "Grouping : Expr expression",
     "Literal : Object value",
     "Logical : Expr left, Token op, Expr right",

@@ -6,6 +6,7 @@ namespace UnSospiro
 		{
 			R VisitBlockStmt(Block stmt);
 			R VisitExpressionStmt(Expression stmt);
+			R VisitFunctionStmt(Function stmt);
 			R VisitIfStmt(If stmt);
 			R VisitPrintStmt(Print stmt);
 			R VisitVarStmt(Var stmt);
@@ -34,6 +35,22 @@ namespace UnSospiro
 				return visitor.VisitExpressionStmt(this);
 			}
 			internal Expr expression;
+		}
+		internal class Function : Stmt
+		{
+			public Function(Token name, List<Token> parameters, List<Stmt> body)
+			{
+				this.name = name;
+				this.parameters = parameters;
+				this.body = body;
+			}
+			internal override R Accept<R>(Visitor<R> visitor)
+			{
+				return visitor.VisitFunctionStmt(this);
+			}
+			internal Token name;
+			internal List<Token> parameters;
+			internal List<Stmt> body;
 		}
 		internal class If : Stmt
 		{

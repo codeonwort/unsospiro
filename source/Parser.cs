@@ -3,7 +3,11 @@
     /*
     program       -> declaration* EOF ;
 
-    declaration   -> varDecl | statement ;
+    declaration   -> funDecl | varDecl | statement ;
+
+    funDecl       -> "fun" function ;
+    function      -> IDENTIFIER "(" parameters? ")" block ;
+    parameters    -> IDENTIFIER ( "," IDENtIFIER )* ;
 
     varDecl       -> "var" IDENTIFIER ( "=" expression )? ";" ;
 
@@ -57,6 +61,7 @@
         {
             try
             {
+                if (Match(TokenType.FUN)) return Function("function");
                 if (Match(TokenType.VAR)) return VarDeclaration();
                 return Statement();
             }
@@ -65,6 +70,30 @@
                 Synchronize();
                 return null;
             }
+        }
+
+        private Stmt.Function Function(string kind)
+        {
+            Token name = Consume(TokenType.IDENTIFIER, $"Expect {kind} name.");
+            Consume(TokenType.LEFT_PAREN, $"Expect '(' after {kind} name.");
+            List<Token> parameters = new();
+            if (!Check(TokenType.RIGHT_PAREN))
+            {
+                do
+                {
+                    if (parameters.Count >= 255)
+                    {
+                        Error(Peek(), "Can't have more than 255 parameters.");
+                    }
+                    parameters.Add(Consume(TokenType.IDENTIFIER, "Expect parameter name."));
+                }
+                while (Match(TokenType.COMMA));
+            }
+            Consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters.");
+
+            Consume(TokenType.LEFT_BRACE, $"Expect '{{' before {kind} body.");
+            List<Stmt> body = Block();
+            return new Stmt.Function(name, parameters, body);
         }
 
         private Stmt VarDeclaration()

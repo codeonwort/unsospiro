@@ -2,7 +2,34 @@
 {
     internal class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<Void>
     {
-        private Env environment = new();
+        private static Env globals;
+        private Env environment;
+
+        internal Env Globals => globals;
+
+        class ClockFunction : Callable
+        {
+            public int Arity() { return 0; }
+
+            public Object Call(Interpreter interpreter, List<Object> arguments)
+            {
+                return (double)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            }
+
+            public override string ToString() => "<native fn>";
+        }
+
+        static Interpreter()
+        {
+            globals = new();
+            globals.Define("clock", new ClockFunction());
+        }
+
+        public Interpreter()
+        {
+            environment = globals;
+            
+        }
 
         public void Interpret(List<Stmt> statements)
         {
@@ -199,10 +226,17 @@
             return Void.Instance;
         }
 
+        public Void VisitFunctionStmt(Stmt.Function stmt)
+        {
+            Function function = new Function(stmt);
+            environment.Define(stmt.name.lexeme, function);
+            return null;
+        }
+
         // ----------------------------------------------------------
         // Utils
 
-        private void ExecuteBlock(List<Stmt> statements, Env environment)
+        internal void ExecuteBlock(List<Stmt> statements, Env environment)
         {
             Env previous = this.environment;
             try

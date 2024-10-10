@@ -9,6 +9,7 @@ namespace UnSospiro
 			R VisitFunctionStmt(Function stmt);
 			R VisitIfStmt(If stmt);
 			R VisitPrintStmt(Print stmt);
+			R VisitReturnStmt(Return stmt);
 			R VisitVarStmt(Var stmt);
 			R VisitWhileStmt(While stmt);
 		}
@@ -79,6 +80,20 @@ namespace UnSospiro
 				return visitor.VisitPrintStmt(this);
 			}
 			internal Expr expression;
+		}
+		internal class Return : Stmt
+		{
+			public Return(Token keyword, Expr value)
+			{
+				this.keyword = keyword;
+				this.value = value;
+			}
+			internal override R Accept<R>(Visitor<R> visitor)
+			{
+				return visitor.VisitReturnStmt(this);
+			}
+			internal Token keyword;
+			internal Expr value;
 		}
 		internal class Var : Stmt
 		{

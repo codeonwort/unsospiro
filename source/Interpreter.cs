@@ -205,6 +205,17 @@
             return Void.Instance;
         }
 
+        public Void VisitReturnStmt(Stmt.Return stmt)
+        {
+            Object value = null;
+            if (stmt.value != null)
+            {
+                value = Evaluate(stmt.value);
+            }
+            // Use exception to implement return...?
+            throw new Return(value);
+        }
+
         public Void VisitVarStmt(Stmt.Var stmt)
         {
             Object value = null; // Default value is nil.

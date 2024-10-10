@@ -11,13 +11,14 @@
 
     varDecl       -> "var" IDENTIFIER ( "=" expression )? ";" ;
 
-    statement     -> exprStmt | forStmt | ifStmt | printStmt | whileStmt | block;
+    statement     -> exprStmt | forStmt | ifStmt | printStmt | returnStmt | whileStmt | block;
 
     exprStmt      -> expression ;
     // for statement has 3 clauses; initializer clause, condition clause, increment clause.
     forStmt       -> "for" "(" ( varDecl | exprStmt | ";" ) expression? ";" expression? ")" statement ;
     ifStmt        -> "if" "(" expression ")" statement ( "else" statement )? ;
     printStmt     -> "print" expression ";" ;
+    returnStmt    -> "return" ( expression )? ";" ;
     whileStmt     -> "while" "(" expression ")" statement ;
     block         -> "{" declaration* "}" ;
 
@@ -115,6 +116,7 @@
             if (Match(TokenType.FOR)) return ForStatement();
             if (Match(TokenType.IF)) return IfStatement();
             if (Match(TokenType.PRINT)) return PrintStatement();
+            if (Match(TokenType.RETURN)) return ReturnStatement();
             if (Match(TokenType.WHILE)) return WhileStatement();
             if (Match(TokenType.LEFT_BRACE)) return new Stmt.Block(Block());
             return ExpressionStatement();
@@ -195,6 +197,18 @@
             Expr value = Expression();
             Consume(TokenType.SEMICOLON, "Expect ';' after value.");
             return new Stmt.Print(value);
+        }
+
+        private Stmt ReturnStatement()
+        {
+            Token keyword = Previous();
+            Expr value = null;
+            if (!Check(TokenType.SEMICOLON))
+            {
+                value = Expression();
+            }
+            Consume(TokenType.SEMICOLON, "Expect ';' after return value.");
+            return new Stmt.Return(keyword, value);
         }
 
         private Stmt WhileStatement()

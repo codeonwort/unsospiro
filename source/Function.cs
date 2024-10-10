@@ -16,7 +16,14 @@
             {
                 env.Define(declaration.parameters[i].lexeme, arguments[i]);
             }
-            interpreter.ExecuteBlock(declaration.body, env);
+            try
+            {
+                interpreter.ExecuteBlock(declaration.body, env);
+            }
+            catch (Return returnValue)
+            {
+                return returnValue.value;
+            }
             return null;
         }
 

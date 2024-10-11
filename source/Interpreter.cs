@@ -239,7 +239,7 @@
 
         public Void VisitFunctionStmt(Stmt.Function stmt)
         {
-            Function function = new Function(stmt);
+            Function function = new Function(stmt, environment);
             environment.Define(stmt.name.lexeme, function);
             return null;
         }

@@ -4,6 +4,7 @@
     {
         private static Env globals;
         private Env environment;
+        private Dictionary<Expr, int> locals = new();
 
         internal Env Globals => globals;
 
@@ -28,7 +29,6 @@
         public Interpreter()
         {
             environment = globals;
-            
         }
 
         public void Interpret(List<Stmt> statements)
@@ -44,6 +44,11 @@
             {
                 MainProgram.RuntimeError(err);
             }
+        }
+
+        public void Resolve(Expr expr, int depth)
+        {
+            locals[expr] = depth;
         }
 
         // ----------------------------------------------------------
@@ -119,13 +124,22 @@
 
         public Object VisitVariableExpr(Expr.Variable expr)
         {
-            return environment.Get(expr.name);
+            return LookUpVariable(expr.name, expr);
         }
 
         public Object VisitAssignExpr(Expr.Assign expr)
         {
             Object value = Evaluate(expr.value);
-            environment.Assign(expr.name, value);
+
+            if (locals.TryGetValue(expr, out int distance))
+            {
+                environment.AssignAt(distance, expr.name, value);
+            }
+            else
+            {
+                globals.Assign(expr.name, value);
+            }
+
             return value;
         }
 
@@ -313,6 +327,15 @@
                 return text;
             }
             return obj.ToString();
+        }
+
+        private Object LookUpVariable(Token name, Expr expr)
+        {
+            if (locals.TryGetValue(expr, out int distance))
+            {
+                return environment.GetAt(distance, name.lexeme);
+            }
+            return globals.Get(name);
         }
     }
 }

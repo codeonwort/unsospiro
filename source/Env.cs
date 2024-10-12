@@ -17,7 +17,7 @@
 
         public void Define(string name, Object value)
         {
-            values.Add(name, value);
+            values[name] = value;
         }
 
         public void Assign(Token name, Object value)
@@ -37,6 +37,11 @@
             throw new RuntimeException(name, $"Undefined variable '{name.lexeme}'.");
         }
 
+        public void AssignAt(int distance, Token name, Object value)
+        {
+            Ancestor(distance).values[name.lexeme] = value;
+        }
+
         public Object Get(Token name)
         {
             if (values.TryGetValue(name.lexeme, out Object value))
@@ -47,6 +52,21 @@
             if (enclosing != null) return enclosing.Get(name);
 
             throw new RuntimeException(name, $"Undefined variable '{name.lexeme}'.");
+        }
+
+        public Object GetAt(int distance, string name)
+        {
+            return Ancestor(distance).values[name];
+        }
+
+        private Env Ancestor(int distance)
+        {
+            Env env = this;
+            for (int i = 0; i < distance; ++i)
+            {
+                env = env.enclosing;
+            }
+            return env;
         }
     }
 }

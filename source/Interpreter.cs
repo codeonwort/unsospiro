@@ -2,7 +2,7 @@
 {
     internal class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<Void>
     {
-        private static Env globals;
+        private Env globals;
         private Env environment;
         private Dictionary<Expr, int> locals = new();
 
@@ -20,14 +20,11 @@
             public override string ToString() => "<native fn>";
         }
 
-        static Interpreter()
+        public Interpreter()
         {
             globals = new();
             globals.Define("clock", new ClockFunction());
-        }
 
-        public Interpreter()
-        {
             environment = globals;
         }
 

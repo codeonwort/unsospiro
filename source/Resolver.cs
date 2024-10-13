@@ -204,6 +204,11 @@
         {
             if (scopes.Count == 0) return;
             var scope = scopes.Peek();
+            if (scope.ContainsKey(name.lexeme))
+            {
+                MainProgram.Error(name, "Already a variable with this name exists in this scope.");
+            }
+
             scope[name.lexeme] = false;
         }
 

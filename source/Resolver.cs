@@ -6,8 +6,15 @@
     /// </summary>
     internal class Resolver : Expr.Visitor<Void>, Stmt.Visitor<Void>
     {
+        private enum FunctionType
+        {
+            NONE,
+            FUNCTION
+        }
+
         private Interpreter interpreter;
         private Stack<Dictionary<string, bool>> scopes = new();
+        private FunctionType currentFunction = FunctionType.NONE;
 
         public Resolver(Interpreter interpreter)
         {
@@ -113,7 +120,7 @@
             Declare(stmt.name);
             Define(stmt.name);
 
-            ResolveFunction(stmt);
+            ResolveFunction(stmt, FunctionType.FUNCTION);
             return Void.Instance;
         }
 
@@ -139,6 +146,11 @@
 
         public Void VisitReturnStmt(Stmt.Return stmt)
         {
+            if (currentFunction == FunctionType.NONE)
+            {
+                MainProgram.Error(stmt.keyword, "Can't return from top-level code.");
+            }
+
             if (stmt.value != null)
             {
                 Resolve(stmt.value);
@@ -161,8 +173,11 @@
             stmt.Accept(this);
         }
 
-        private void ResolveFunction(Stmt.Function function)
+        private void ResolveFunction(Stmt.Function function, FunctionType type)
         {
+            FunctionType enclosingFunction = currentFunction;
+            currentFunction = type;
+
             BeginScope();
             foreach (Token param in function.parameters)
             {
@@ -171,6 +186,8 @@
             }
             Resolve(function.body);
             EndScope();
+
+            currentFunction = enclosingFunction;
         }
 
         private void Resolve(Expr expr)

@@ -72,6 +72,8 @@
             Resolver resolver = new Resolver(interpreter);
             resolver.Resolve(statements);
 
+            if (hadError) return;
+
             interpreter.Interpret(statements);
             //Console.WriteLine(new AstPrinter().Print(expression));
             //foreach (var token in tokens) Console.WriteLine($"{token}");

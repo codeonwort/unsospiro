@@ -203,6 +203,14 @@
             return Void.Instance;
         }
 
+        public Void VisitClassStmt(Stmt.Class stmt)
+        {
+            environment.Define(stmt.name.lexeme, null);
+            Class klass = new Class(stmt.name.lexeme);
+            environment.Assign(stmt.name, klass);
+            return Void.Instance;
+        }
+
         public Void VisitExpressionStmt(Stmt.Expression stmt)
         {
             Evaluate(stmt.expression);

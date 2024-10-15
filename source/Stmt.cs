@@ -5,6 +5,7 @@ namespace UnSospiro
 		internal interface Visitor<R>
 		{
 			R VisitBlockStmt(Block stmt);
+			R VisitClassStmt(Class stmt);
 			R VisitExpressionStmt(Expression stmt);
 			R VisitFunctionStmt(Function stmt);
 			R VisitIfStmt(If stmt);
@@ -24,6 +25,20 @@ namespace UnSospiro
 				return visitor.VisitBlockStmt(this);
 			}
 			internal List<Stmt> statements;
+		}
+		internal class Class : Stmt
+		{
+			public Class(Token name, List<Stmt.Function> methods)
+			{
+				this.name = name;
+				this.methods = methods;
+			}
+			internal override R Accept<R>(Visitor<R> visitor)
+			{
+				return visitor.VisitClassStmt(this);
+			}
+			internal Token name;
+			internal List<Stmt.Function> methods;
 		}
 		internal class Expression : Stmt
 		{

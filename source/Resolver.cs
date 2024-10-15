@@ -104,6 +104,14 @@
             return Void.Instance;
         }
 
+        public Void VisitClassStmt(Stmt.Class stmt)
+        {
+            // TODO: Resolve methods
+            Declare(stmt.name);
+            Define(stmt.name);
+            return Void.Instance;
+        }
+
         public Void VisitVarStmt(Stmt.Var stmt)
         {
             Declare(stmt.name);

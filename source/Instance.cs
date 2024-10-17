@@ -1,5 +1,6 @@
 ﻿namespace UnSospiro
 {
+    // Represents an object instantiated from a class.
     internal class Instance
     {
         private Class klass;
@@ -17,6 +18,11 @@
             if (fields.TryGetValue(name.lexeme, out Object value))
             {
                 return value;
+            }
+            Function method = klass.FindMethod(name.lexeme);
+            if (method != null)
+            {
+                return method;
             }
             throw new RuntimeException(name, $"Undefined property '{name.lexeme}'.");
         }

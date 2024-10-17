@@ -9,7 +9,8 @@
         private enum FunctionType
         {
             NONE,
-            FUNCTION
+            FUNCTION,
+            METHOD
         }
 
         private Interpreter interpreter;
@@ -119,9 +120,15 @@
 
         public Void VisitClassStmt(Stmt.Class stmt)
         {
-            // TODO: Resolve methods
             Declare(stmt.name);
             Define(stmt.name);
+
+            foreach (Stmt.Function method in stmt.methods)
+            {
+                FunctionType declaration = FunctionType.METHOD;
+                ResolveFunction(method, declaration);
+            }
+
             return Void.Instance;
         }
 

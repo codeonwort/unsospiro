@@ -231,7 +231,15 @@
         public Void VisitClassStmt(Stmt.Class stmt)
         {
             environment.Define(stmt.name.lexeme, null);
-            Class klass = new Class(stmt.name.lexeme);
+
+            Dictionary<string, Function> methods = new();
+            foreach (Stmt.Function method in stmt.methods)
+            {
+                Function function = new Function(method, environment);
+                methods.Add(method.name.lexeme, function);
+            }
+
+            Class klass = new Class(stmt.name.lexeme, methods);
             environment.Assign(stmt.name, klass);
             return Void.Instance;
         }

@@ -19,6 +19,6 @@
 
         public int Arity() => 0; // TODO: Constructor does not take any arguments for now.
 
-        // TODO: Implement fields and methods.
+        // TODO: Implement methods.
     }
 }

@@ -62,6 +62,12 @@
             return Void.Instance;
         }
 
+        public Void VisitGetExpr(Expr.Get expr)
+        {
+            Resolve(expr.obj);
+            return Void.Instance;
+        }
+
         public Void VisitGroupingExpr(Expr.Grouping expr)
         {
             Resolve(expr.expression);
@@ -77,6 +83,13 @@
         {
             Resolve(expr.left);
             Resolve(expr.right);
+            return Void.Instance;
+        }
+
+        public Void VisitSetExpr(Expr.Set expr)
+        {
+            Resolve(expr.value);
+            Resolve(expr.obj);
             return Void.Instance;
         }
 

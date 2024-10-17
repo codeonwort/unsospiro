@@ -26,7 +26,7 @@
 
     arguments     -> expression ( "," expression )* ;
     expression    -> assignment ;
-    assignment    -> IDENTIFIER "=" assignment | logic_or ;
+    assignment    -> ( call "." )? IDENTIFIER "=" assignment | logic_or ;
     logic_or      -> logic_and ( "or" logic_and )* ;
     logic_and     -> equality ( "and" equality )* ;
     equality      -> comparison ( ( "!=" | "==" ) comparison )* ;
@@ -34,7 +34,7 @@
     term          -> factor ( ( "-" | "+" ) factor )* ;
     factor        -> unary ( ( "/" | "*" ) unary )* ;
     unary         -> ( "!" | "-" ) unary | call ;
-    call          -> primary ( "(" arguments? ")" )* ;
+    call          -> primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
     primary       -> NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER ;
     */
 
@@ -280,6 +280,11 @@
                     Token name = ((Expr.Variable)expr).name;
                     return new Expr.Assign(name, value);
                 }
+                else if (expr is Expr.Get)
+                {
+                    Expr.Get get = (Expr.Get)expr;
+                    return new Expr.Set(get.obj, get.name, value);
+                }
 
                 Error(equals, "Invalid assignment target.");
             }
@@ -383,6 +388,11 @@
                 if (Match(TokenType.LEFT_PAREN))
                 {
                     expr = FinishCall(expr);
+                }
+                else if (Match(TokenType.DOT))
+                {
+                    Token name = Consume(TokenType.IDENTIFIER, "Expect property name after '.'.");
+                    expr = new Expr.Get(expr, name);
                 }
                 else
                 {

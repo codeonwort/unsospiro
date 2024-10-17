@@ -7,9 +7,11 @@ namespace UnSospiro
 			R VisitAssignExpr(Assign expr);
 			R VisitBinaryExpr(Binary expr);
 			R VisitCallExpr(Call expr);
+			R VisitGetExpr(Get expr);
 			R VisitGroupingExpr(Grouping expr);
 			R VisitLiteralExpr(Literal expr);
 			R VisitLogicalExpr(Logical expr);
+			R VisitSetExpr(Set expr);
 			R VisitUnaryExpr(Unary expr);
 			R VisitVariableExpr(Variable expr);
 		}
@@ -59,6 +61,20 @@ namespace UnSospiro
 			internal Token paren;
 			internal List<Expr> arguments;
 		}
+		internal class Get : Expr
+		{
+			public Get(Expr obj, Token name)
+			{
+				this.obj = obj;
+				this.name = name;
+			}
+			internal override R Accept<R>(Visitor<R> visitor)
+			{
+				return visitor.VisitGetExpr(this);
+			}
+			internal Expr obj;
+			internal Token name;
+		}
 		internal class Grouping : Expr
 		{
 			public Grouping(Expr expression)
@@ -98,6 +114,22 @@ namespace UnSospiro
 			internal Expr left;
 			internal Token op;
 			internal Expr right;
+		}
+		internal class Set : Expr
+		{
+			public Set(Expr obj, Token name, Expr value)
+			{
+				this.obj = obj;
+				this.name = name;
+				this.value = value;
+			}
+			internal override R Accept<R>(Visitor<R> visitor)
+			{
+				return visitor.VisitSetExpr(this);
+			}
+			internal Expr obj;
+			internal Token name;
+			internal Expr value;
 		}
 		internal class Unary : Expr
 		{

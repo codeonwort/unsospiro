@@ -49,6 +49,11 @@ namespace UnSospiro
             return Parenthesize("and", expr.left, expr.right);
         }
 
+        public string VisitSetExpr(Expr.Set expr)
+        {
+            return Parenthesize("set {expr.name}", expr.obj, expr.value);
+        }
+
         public string VisitCallExpr(Expr.Call expr)
         {
             Expr[] calleeAndArgs = new Expr[expr.arguments.Count + 1];
@@ -58,6 +63,11 @@ namespace UnSospiro
                 calleeAndArgs[i + 1] = expr.arguments[i];
             }
             return Parenthesize("call", calleeAndArgs);
+        }
+
+        public string VisitGetExpr(Expr.Get expr)
+        {
+            return Parenthesize($"get {expr.name}", expr.obj);
         }
 
         private string Parenthesize(string name, params Expr[] exprs)

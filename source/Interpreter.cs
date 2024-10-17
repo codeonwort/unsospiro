@@ -156,6 +156,20 @@
             return Evaluate(expr.right);
         }
 
+        public Object VisitSetExpr(Expr.Set expr)
+        {
+            Object obj = Evaluate(expr.obj);
+
+            if (!(obj is Instance))
+            {
+                throw new RuntimeException(expr.name, "Only instances have fields.");
+            }
+
+            Object value = Evaluate(expr.value);
+            ((Instance)obj).Set(expr.name, value);
+            return value;
+        }
+
         public Object VisitCallExpr(Expr.Call expr)
         {
             Object callee = Evaluate(expr.callee);
@@ -179,6 +193,17 @@
             }
 
             return function.Call(this, arguments);
+        }
+
+        public Object VisitGetExpr(Expr.Get expr)
+        {
+            Object obj = Evaluate(expr.obj);
+            if (obj is Instance)
+            {
+                return ((Instance)obj).Get(expr.name);
+            }
+
+            throw new RuntimeException(expr.name, "Only instances have properties.");
         }
 
         // ----------------------------------------------------------

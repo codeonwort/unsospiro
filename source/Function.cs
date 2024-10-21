@@ -31,6 +31,13 @@
 
         public int Arity() => declaration.parameters.Count;
 
+        public Function Bind(Instance instance)
+        {
+            Env environment = new(closure);
+            environment.Define("this", instance);
+            return new Function(declaration, environment);
+        }
+
         public override string ToString() => $"<fn {declaration.name.lexeme} >";
     }
 }

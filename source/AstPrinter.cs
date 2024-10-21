@@ -70,6 +70,11 @@ namespace UnSospiro
             return Parenthesize($"get {expr.name}", expr.obj);
         }
 
+        public string VisitThisExpr(Expr.This expr)
+        {
+            return Parenthesize("this", expr);
+        }
+
         private string Parenthesize(string name, params Expr[] exprs)
         {
             StringBuilder writer = new();

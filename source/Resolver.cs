@@ -13,9 +13,16 @@
             METHOD
         }
 
+        private enum ClassType
+        {
+            NONE,
+            CLASS
+        }
+
         private Interpreter interpreter;
         private Stack<Dictionary<string, bool>> scopes = new();
         private FunctionType currentFunction = FunctionType.NONE;
+        private ClassType currentClass = ClassType.NONE;
 
         public Resolver(Interpreter interpreter)
         {
@@ -94,6 +101,17 @@
             return Void.Instance;
         }
 
+        public Void VisitThisExpr(Expr.This expr)
+        {
+            if (currentClass == ClassType.NONE)
+            {
+                MainProgram.Error(expr.keyword, "Can't use 'this' outside of a class.");
+                return Void.Instance;
+            }
+            ResolveLocal(expr, expr.keyword);
+            return Void.Instance;
+        }
+
         public Void VisitBinaryExpr(Expr.Binary expr)
         {
             Resolve(expr.left);
@@ -120,8 +138,14 @@
 
         public Void VisitClassStmt(Stmt.Class stmt)
         {
+            ClassType enclosingClass = currentClass;
+            currentClass = ClassType.CLASS;
+
             Declare(stmt.name);
             Define(stmt.name);
+
+            BeginScope();
+            scopes.Peek().Add("this", true);
 
             foreach (Stmt.Function method in stmt.methods)
             {
@@ -129,6 +153,9 @@
                 ResolveFunction(method, declaration);
             }
 
+            EndScope();
+
+            currentClass = enclosingClass;
             return Void.Instance;
         }
 

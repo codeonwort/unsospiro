@@ -170,6 +170,11 @@
             return value;
         }
 
+        public Object VisitThisExpr(Expr.This expr)
+        {
+            return LookUpVariable(expr.keyword, expr);
+        }
+
         public Object VisitCallExpr(Expr.Call expr)
         {
             Object callee = Evaluate(expr.callee);
@@ -371,6 +376,9 @@
         {
             if (locals.TryGetValue(expr, out int distance))
             {
+                // TODO: Why off by one bug?
+                if (expr is Expr.This) distance += 1;
+
                 return environment.GetAt(distance, name.lexeme);
             }
             return globals.Get(name);

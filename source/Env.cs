@@ -2,7 +2,7 @@
 {
     internal class Env
     {
-        Env enclosing;
+        private Env enclosing;
         private Dictionary<string, Object> values = new();
 
         public Env()

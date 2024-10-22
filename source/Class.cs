@@ -21,9 +21,19 @@
         public Object Call(Interpreter interpreter, List<Object> arguments)
         {
             Instance instance = new Instance(this);
+            Function initializer = FindMethod("init");
+            if (initializer != null)
+            {
+                initializer.Bind(instance).Call(interpreter, arguments);
+            }
             return instance;
         }
 
-        public int Arity() => 0; // TODO: Constructor does not take any arguments for now.
+        public int Arity()
+        {
+            Function initializer = FindMethod("init");
+            if (initializer == null) return 0;
+            return initializer.Arity();
+        }
     }
 }

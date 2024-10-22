@@ -10,6 +10,7 @@
         {
             NONE,
             FUNCTION,
+            INITIALIZER,
             METHOD
         }
 
@@ -150,6 +151,10 @@
             foreach (Stmt.Function method in stmt.methods)
             {
                 FunctionType declaration = FunctionType.METHOD;
+                if (method.name.lexeme.Equals("init"))
+                {
+                    declaration = FunctionType.INITIALIZER;
+                }
                 ResolveFunction(method, declaration);
             }
 
@@ -208,6 +213,10 @@
 
             if (stmt.value != null)
             {
+                if (currentFunction == FunctionType.INITIALIZER)
+                {
+                    MainProgram.Error(stmt.keyword, "Can't return a value from an initializer.");
+                }
                 Resolve(stmt.value);
             }
             return Void.Instance;

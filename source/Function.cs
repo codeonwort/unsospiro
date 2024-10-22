@@ -4,11 +4,13 @@
     {
         private Stmt.Function declaration;
         private Env closure;
+        private bool isInitializer;
 
-        public Function(Stmt.Function declaration, Env closure)
+        public Function(Stmt.Function declaration, Env closure, bool isInitializer)
         {
             this.declaration = declaration;
             this.closure = closure;
+            this.isInitializer = isInitializer;
         }
 
         public Object Call(Interpreter interpreter, List<Object> arguments)
@@ -24,8 +26,10 @@
             }
             catch (Return returnValue)
             {
+                if (isInitializer) return closure.GetAt(0, "this");
                 return returnValue.value;
             }
+            if (isInitializer) return closure.GetAt(0, "this");
             return null;
         }
 
@@ -35,7 +39,7 @@
         {
             Env environment = new(closure);
             environment.Define("this", instance);
-            return new Function(declaration, environment);
+            return new Function(declaration, environment, isInitializer);
         }
 
         public override string ToString() => $"<fn {declaration.name.lexeme} >";

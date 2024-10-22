@@ -240,7 +240,8 @@
             Dictionary<string, Function> methods = new();
             foreach (Stmt.Function method in stmt.methods)
             {
-                Function function = new Function(method, environment);
+                bool isInitializer = method.name.lexeme.Equals("init");
+                Function function = new Function(method, environment, isInitializer);
                 methods.Add(method.name.lexeme, function);
             }
 
@@ -296,7 +297,7 @@
 
         public Void VisitFunctionStmt(Stmt.Function stmt)
         {
-            Function function = new Function(stmt, environment);
+            Function function = new Function(stmt, environment, false);
             environment.Define(stmt.name.lexeme, function);
             return Void.Instance;
         }
@@ -377,7 +378,10 @@
             if (locals.TryGetValue(expr, out int distance))
             {
                 // TODO: Why off by one bug?
-                if (expr is Expr.This) distance += 1;
+                if (expr is Expr.This)
+                {
+                    distance += 1;
+                }
 
                 return environment.GetAt(distance, name.lexeme);
             }

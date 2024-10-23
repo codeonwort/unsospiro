@@ -145,6 +145,16 @@
             Declare(stmt.name);
             Define(stmt.name);
 
+            if (stmt.superclass != null && stmt.name.lexeme.Equals(stmt.superclass.name.lexeme))
+            {
+                MainProgram.Error(stmt.superclass.name, "A class can't inherit from itself.");
+            }
+
+            if (stmt.superclass != null)
+            {
+                Resolve(stmt.superclass);
+            }
+
             BeginScope();
             scopes.Peek().Add("this", true);
 

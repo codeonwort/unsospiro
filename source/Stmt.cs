@@ -28,9 +28,10 @@ namespace UnSospiro
 		}
 		internal class Class : Stmt
 		{
-			public Class(Token name, List<Stmt.Function> methods)
+			public Class(Token name, Expr.Variable superclass, List<Stmt.Function> methods)
 			{
 				this.name = name;
+				this.superclass = superclass;
 				this.methods = methods;
 			}
 			internal override R Accept<R>(Visitor<R> visitor)
@@ -38,6 +39,7 @@ namespace UnSospiro
 				return visitor.VisitClassStmt(this);
 			}
 			internal Token name;
+			internal Expr.Variable superclass;
 			internal List<Stmt.Function> methods;
 		}
 		internal class Expression : Stmt

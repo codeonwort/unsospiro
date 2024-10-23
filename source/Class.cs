@@ -3,11 +3,13 @@
     internal class Class : Callable
     {
         private string name;
+        private Class superclass;
         private Dictionary<string, Function> methods;
 
-        public Class(string name, Dictionary<string, Function> methods)
+        public Class(string name, Class superclass, Dictionary<string, Function> methods)
         {
             this.name = name;
+            this.superclass = superclass;
             this.methods = methods;
         }
 

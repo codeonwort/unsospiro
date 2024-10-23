@@ -235,6 +235,16 @@
 
         public Void VisitClassStmt(Stmt.Class stmt)
         {
+            Object superclass = null;
+            if (stmt.superclass != null)
+            {
+                superclass = Evaluate(stmt.superclass);
+                if (!(superclass is Class))
+                {
+                    throw new RuntimeException(stmt.superclass.name, "Superclass must be a class.");
+                }
+            }
+
             environment.Define(stmt.name.lexeme, null);
 
             Dictionary<string, Function> methods = new();
@@ -245,7 +255,7 @@
                 methods.Add(method.name.lexeme, function);
             }
 
-            Class klass = new Class(stmt.name.lexeme, methods);
+            Class klass = new Class(stmt.name.lexeme, (Class)superclass, methods);
             environment.Assign(stmt.name, klass);
             return Void.Instance;
         }

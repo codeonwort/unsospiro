@@ -17,7 +17,15 @@
 
         public Function FindMethod(string name)
         {
-            return methods.GetValueOrDefault(name, null);
+            if (methods.TryGetValue(name, out var method))
+            {
+                return method;
+            }
+            if (superclass != null)
+            {
+                return superclass.FindMethod(name);
+            }
+            return null;
         }
 
         public Object Call(Interpreter interpreter, List<Object> arguments)

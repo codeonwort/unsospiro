@@ -17,7 +17,8 @@
         private enum ClassType
         {
             NONE,
-            CLASS
+            CLASS,
+            SUBCLASS
         }
 
         private Interpreter interpreter;
@@ -102,6 +103,20 @@
             return Void.Instance;
         }
 
+        public Void VisitSuperExpr(Expr.Super expr)
+        {
+            if (currentClass == ClassType.NONE)
+            {
+                MainProgram.Error(expr.keyword, "Can't use 'super' outside of a class.");
+            }
+            else if (currentClass != ClassType.SUBCLASS)
+            {
+                MainProgram.Error(expr.keyword, "Can't use 'super' in a class with no superclass.");
+            }
+            ResolveLocal(expr, expr.keyword);
+            return Void.Instance;
+        }
+
         public Void VisitThisExpr(Expr.This expr)
         {
             if (currentClass == ClassType.NONE)
@@ -152,7 +167,14 @@
 
             if (stmt.superclass != null)
             {
+                currentClass = ClassType.SUBCLASS;
                 Resolve(stmt.superclass);
+            }
+
+            if (stmt.superclass != null)
+            {
+                BeginScope();
+                scopes.Peek().Add("super", true);
             }
 
             BeginScope();
@@ -169,6 +191,11 @@
             }
 
             EndScope();
+
+            if (stmt.superclass != null)
+            {
+                EndScope();
+            }
 
             currentClass = enclosingClass;
             return Void.Instance;

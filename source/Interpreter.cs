@@ -170,6 +170,20 @@
             return value;
         }
 
+        public Object VisitSuperExpr(Expr.Super expr)
+        {
+            int distance = locals[expr];
+            distance += 2; // TODO: Off by two???
+            Class superclass = (Class)environment.GetAt(distance, "super");
+            Instance obj = (Instance)environment.GetAt(distance - 1, "this");
+            Function method = superclass.FindMethod(expr.method.lexeme);
+            if (method == null)
+            {
+                throw new RuntimeException(expr.method, $"Undefined property '{expr.method.lexeme}'.");
+            }
+            return method.Bind(obj);
+        }
+
         public Object VisitThisExpr(Expr.This expr)
         {
             return LookUpVariable(expr.keyword, expr);
@@ -247,6 +261,12 @@
 
             environment.Define(stmt.name.lexeme, null);
 
+            if (stmt.superclass != null)
+            {
+                environment = new Env(environment);
+                environment.Define("super", superclass);
+            }
+
             Dictionary<string, Function> methods = new();
             foreach (Stmt.Function method in stmt.methods)
             {
@@ -256,6 +276,12 @@
             }
 
             Class klass = new Class(stmt.name.lexeme, (Class)superclass, methods);
+
+            if (superclass != null)
+            {
+                environment = environment.Enclosing;
+            }
+
             environment.Assign(stmt.name, klass);
             return Void.Instance;
         }

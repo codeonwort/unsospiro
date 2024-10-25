@@ -12,6 +12,7 @@ namespace UnSospiro
 			R VisitLiteralExpr(Literal expr);
 			R VisitLogicalExpr(Logical expr);
 			R VisitSetExpr(Set expr);
+			R VisitSuperExpr(Super expr);
 			R VisitThisExpr(This expr);
 			R VisitUnaryExpr(Unary expr);
 			R VisitVariableExpr(Variable expr);
@@ -131,6 +132,20 @@ namespace UnSospiro
 			internal Expr obj;
 			internal Token name;
 			internal Expr value;
+		}
+		internal class Super : Expr
+		{
+			public Super(Token keyword, Token method)
+			{
+				this.keyword = keyword;
+				this.method = method;
+			}
+			internal override R Accept<R>(Visitor<R> visitor)
+			{
+				return visitor.VisitSuperExpr(this);
+			}
+			internal Token keyword;
+			internal Token method;
 		}
 		internal class This : Expr
 		{

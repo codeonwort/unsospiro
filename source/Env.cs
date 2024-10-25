@@ -5,6 +5,8 @@
         private Env enclosing;
         private Dictionary<string, Object> values = new();
 
+        public Env Enclosing => enclosing;
+
         public Env()
         {
             this.enclosing = null;

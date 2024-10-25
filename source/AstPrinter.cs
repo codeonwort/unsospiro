@@ -54,6 +54,11 @@ namespace UnSospiro
             return Parenthesize("set {expr.name}", expr.obj, expr.value);
         }
 
+        public string VisitSuperExpr(Expr.Super expr)
+        {
+            return Parenthesize("super", expr);
+        }
+
         public string VisitCallExpr(Expr.Call expr)
         {
             Expr[] calleeAndArgs = new Expr[expr.arguments.Count + 1];

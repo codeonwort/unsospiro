@@ -2,6 +2,8 @@
 {
     internal class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<Void>
     {
+        private MainProgram mainProgram;
+
         private Env globals;
         private Env environment;
         private Dictionary<Expr, int> locals = new();
@@ -20,8 +22,10 @@
             public override string ToString() => "<native fn>";
         }
 
-        public Interpreter()
+        public Interpreter(MainProgram mainProgram)
         {
+            this.mainProgram = mainProgram;
+
             globals = new();
             globals.Define("clock", new ClockFunction());
 
@@ -39,7 +43,7 @@
             }
             catch (RuntimeException err)
             {
-                MainProgram.RuntimeError(err);
+                mainProgram.RuntimeError(err);
             }
         }
 

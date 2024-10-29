@@ -28,8 +28,10 @@
                 { "while",  TokenType.WHILE  },
             };
         }
-        
+
         #endregion
+
+        private MainProgram mainProgram;
 
         private string source;
         private List<Token> tokens = new();
@@ -37,9 +39,10 @@
         private int current = 0;
         private int line = 1;
 
-        public Scanner(string source)
+        public Scanner(string source, MainProgram mainProgram)
         {
             this.source = source;
+            this.mainProgram = mainProgram;
         }
 
         public List<Token> ScanTokens()
@@ -110,7 +113,7 @@
                     }
                     else
                     {
-                        MainProgram.Error(line, $"Unexpected character {c}.");
+                        mainProgram.Error(line, $"Unexpected character {c}.");
                     }
                     break;
             }
@@ -153,7 +156,7 @@
             }
             if (IsAtEnd())
             {
-                MainProgram.Error(line, "Unterminated string.");
+                mainProgram.Error(line, "Unterminated string.");
             }
             Advance(); // Closing quotation mark
 

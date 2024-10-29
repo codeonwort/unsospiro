@@ -21,14 +21,17 @@
             SUBCLASS
         }
 
+        private MainProgram mainProgram;
+
         private Interpreter interpreter;
         private Stack<Dictionary<string, bool>> scopes = new();
         private FunctionType currentFunction = FunctionType.NONE;
         private ClassType currentClass = ClassType.NONE;
 
-        public Resolver(Interpreter interpreter)
+        public Resolver(Interpreter interpreter, MainProgram mainProgram)
         {
             this.interpreter = interpreter;
+            this.mainProgram = mainProgram;
         }
 
         public void Resolve(List<Stmt> statements)
@@ -48,7 +51,7 @@
             {
                 if (value == false)
                 {
-                    MainProgram.Error(expr.name, "Can't read local variable in its own initializer.");
+                    mainProgram.Error(expr.name, "Can't read local variable in its own initializer.");
                 }
             }
             ResolveLocal(expr, expr.name);
@@ -107,11 +110,11 @@
         {
             if (currentClass == ClassType.NONE)
             {
-                MainProgram.Error(expr.keyword, "Can't use 'super' outside of a class.");
+                mainProgram.Error(expr.keyword, "Can't use 'super' outside of a class.");
             }
             else if (currentClass != ClassType.SUBCLASS)
             {
-                MainProgram.Error(expr.keyword, "Can't use 'super' in a class with no superclass.");
+                mainProgram.Error(expr.keyword, "Can't use 'super' in a class with no superclass.");
             }
             ResolveLocal(expr, expr.keyword);
             return Void.Instance;
@@ -121,7 +124,7 @@
         {
             if (currentClass == ClassType.NONE)
             {
-                MainProgram.Error(expr.keyword, "Can't use 'this' outside of a class.");
+                mainProgram.Error(expr.keyword, "Can't use 'this' outside of a class.");
                 return Void.Instance;
             }
             ResolveLocal(expr, expr.keyword);
@@ -162,7 +165,7 @@
 
             if (stmt.superclass != null && stmt.name.lexeme.Equals(stmt.superclass.name.lexeme))
             {
-                MainProgram.Error(stmt.superclass.name, "A class can't inherit from itself.");
+                mainProgram.Error(stmt.superclass.name, "A class can't inherit from itself.");
             }
 
             if (stmt.superclass != null)
@@ -245,14 +248,14 @@
         {
             if (currentFunction == FunctionType.NONE)
             {
-                MainProgram.Error(stmt.keyword, "Can't return from top-level code.");
+                mainProgram.Error(stmt.keyword, "Can't return from top-level code.");
             }
 
             if (stmt.value != null)
             {
                 if (currentFunction == FunctionType.INITIALIZER)
                 {
-                    MainProgram.Error(stmt.keyword, "Can't return a value from an initializer.");
+                    mainProgram.Error(stmt.keyword, "Can't return a value from an initializer.");
                 }
                 Resolve(stmt.value);
             }
@@ -324,7 +327,7 @@
             var scope = scopes.Peek();
             if (scope.ContainsKey(name.lexeme))
             {
-                MainProgram.Error(name, "Already a variable with this name exists in this scope.");
+                mainProgram.Error(name, "Already a variable with this name exists in this scope.");
             }
 
             scope[name.lexeme] = false;

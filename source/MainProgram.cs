@@ -2,13 +2,14 @@
 {
     internal class MainProgram
     {
-        private static Interpreter interpreter = new Interpreter();
-        private static bool hadError = false;
-        private static bool hadRuntimeError = false;
+        private Interpreter interpreter;
+        private bool hadError = false;
+        private bool hadRuntimeError = false;
 
         private static void Main(string[] args)
         {
-            //TestAstPrinter();
+            var instance = new MainProgram();
+            //instance.TestAstPrinter();
 
             if (args.Length > 1)
             {
@@ -17,16 +18,21 @@
             }
             else if (args.Length == 1)
             {
-                RunFile(args[0]);
+                instance.RunFile(args[0]);
             }
             else
             {
-                RunPrompt();
+                instance.RunPrompt();
             }
         }
 
+        private MainProgram()
+        {
+            interpreter = new Interpreter(this);
+        }
+
         // For test
-        private static void TestAstPrinter()
+        private void TestAstPrinter()
         {
             Expr expression = new Expr.Binary(
                 new Expr.Unary(
@@ -39,7 +45,7 @@
             Console.WriteLine(printer.Print(expression));
         }
 
-        private static void RunFile(string file)
+        private void RunFile(string file)
         {
             string source = File.ReadAllText(Path.GetFullPath(file), System.Text.Encoding.Default);
             Run(source);
@@ -48,7 +54,7 @@
             if (hadRuntimeError) Environment.Exit(70);
         }
 
-        private static void RunPrompt()
+        private void RunPrompt()
         {
             while (true)
             {
@@ -60,16 +66,16 @@
             }
         }
 
-        private static void Run(string source)
+        private void Run(string source)
         {
-            Scanner scanner = new Scanner(source);
+            Scanner scanner = new Scanner(source, this);
             List<Token> tokens = scanner.ScanTokens();
-            Parser parser = new Parser(tokens);
+            Parser parser = new Parser(tokens, this);
             List<Stmt> statements = parser.Parse();
 
             if (hadError) return;
 
-            Resolver resolver = new Resolver(interpreter);
+            Resolver resolver = new Resolver(interpreter, this);
             resolver.Resolve(statements);
 
             if (hadError) return;
@@ -79,12 +85,12 @@
             //foreach (var token in tokens) Console.WriteLine($"{token}");
         }
 
-        internal static void Error(int line, string message)
+        internal void Error(int line, string message)
         {
             Report(line, "", message);
         }
 
-        internal static void Error(Token token, string message)
+        internal void Error(Token token, string message)
         {
             if (token.type == TokenType.EOF)
             {
@@ -96,13 +102,13 @@
             }
         }
 
-        internal static void RuntimeError(RuntimeException err)
+        internal void RuntimeError(RuntimeException err)
         {
             Console.WriteLine($"{err.Message} \n[line {err.token.line}]");
             hadRuntimeError = true;
         }
 
-        private static void Report(int line, string where, string message)
+        private void Report(int line, string where, string message)
         {
             Console.WriteLine($"[line {line}] Error {where}: {message}");
             hadError = true;

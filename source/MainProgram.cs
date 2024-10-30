@@ -26,7 +26,7 @@
             }
         }
 
-        private MainProgram()
+        public MainProgram()
         {
             interpreter = new Interpreter(this);
         }

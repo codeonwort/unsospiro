@@ -11,4 +11,8 @@
     <StartupObject>UnSospiro.MainProgram</StartupObject>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="MSTest" Version="3.6.1" />
+  </ItemGroup>
+
 </Project>

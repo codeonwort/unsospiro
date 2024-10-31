@@ -1,5 +1,13 @@
 ﻿namespace UnSospiro
 {
+    // TODO: Use this instead of MainProgram
+    internal interface ErrorListener
+    {
+        public void Error(int line, string message);
+        public void Error(Token token, string message);
+        public void RuntimeError(RuntimeException err);
+    }
+
     internal class MainProgram
     {
         private Interpreter interpreter;

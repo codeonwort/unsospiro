@@ -1,14 +1,14 @@
 ﻿namespace UnSospiro
 {
     // TODO: Use this instead of MainProgram
-    internal interface ErrorListener
+    internal interface IErrorListener
     {
         public void Error(int line, string message);
         public void Error(Token token, string message);
         public void RuntimeError(RuntimeException err);
     }
 
-    internal class MainProgram
+    internal class MainProgram : IErrorListener
     {
         private Interpreter interpreter;
         private bool hadError = false;
@@ -93,12 +93,13 @@
             //foreach (var token in tokens) Console.WriteLine($"{token}");
         }
 
-        internal void Error(int line, string message)
+        #region IErrorListener
+        public void Error(int line, string message)
         {
             Report(line, "", message);
         }
 
-        internal void Error(Token token, string message)
+        public void Error(Token token, string message)
         {
             if (token.type == TokenType.EOF)
             {
@@ -110,7 +111,7 @@
             }
         }
 
-        internal void RuntimeError(RuntimeException err)
+        public void RuntimeError(RuntimeException err)
         {
             Console.WriteLine($"{err.Message} \n[line {err.token.line}]");
             hadRuntimeError = true;
@@ -121,5 +122,6 @@
             Console.WriteLine($"[line {line}] Error {where}: {message}");
             hadError = true;
         }
+        #endregion
     }
 }

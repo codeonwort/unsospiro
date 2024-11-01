@@ -2,7 +2,7 @@
 {
     internal class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<Void>
     {
-        private MainProgram mainProgram;
+        private IErrorListener errorListener;
 
         private Env globals;
         private Env environment;
@@ -22,9 +22,9 @@
             public override string ToString() => "<native fn>";
         }
 
-        public Interpreter(MainProgram mainProgram)
+        public Interpreter(IErrorListener errorListener)
         {
-            this.mainProgram = mainProgram;
+            this.errorListener = errorListener;
 
             globals = new();
             globals.Define("clock", new ClockFunction());
@@ -43,7 +43,7 @@
             }
             catch (RuntimeException err)
             {
-                mainProgram.RuntimeError(err);
+                errorListener.RuntimeError(err);
             }
         }
 

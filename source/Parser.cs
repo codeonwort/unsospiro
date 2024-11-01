@@ -42,15 +42,15 @@
     {
         private class ParserException : Exception { }
 
-        MainProgram mainProgram;
+        IErrorListener errorListener;
 
         private List<Token> tokens;
         private int current = 0;
 
-        public Parser(List<Token> tokens, MainProgram mainProgram)
+        public Parser(List<Token> tokens, IErrorListener errorListener)
         {
             this.tokens = tokens;
-            this.mainProgram = mainProgram;
+            this.errorListener = errorListener;
         }
 
         public List<Stmt> Parse()
@@ -525,7 +525,7 @@
 
         private Exception Error(Token token, string message)
         {
-            mainProgram.Error(token, message);
+            errorListener.Error(token, message);
             return new ParserException();
         }
 

@@ -31,7 +31,7 @@
 
         #endregion
 
-        private MainProgram mainProgram;
+        private IErrorListener errorListener;
 
         private string source;
         private List<Token> tokens = new();
@@ -39,10 +39,10 @@
         private int current = 0;
         private int line = 1;
 
-        public Scanner(string source, MainProgram mainProgram)
+        public Scanner(string source, IErrorListener errorListener)
         {
             this.source = source;
-            this.mainProgram = mainProgram;
+            this.errorListener = errorListener;
         }
 
         public List<Token> ScanTokens()
@@ -113,7 +113,7 @@
                     }
                     else
                     {
-                        mainProgram.Error(line, $"Unexpected character {c}.");
+                        errorListener.Error(line, $"Unexpected character {c}.");
                     }
                     break;
             }
@@ -156,7 +156,7 @@
             }
             if (IsAtEnd())
             {
-                mainProgram.Error(line, "Unterminated string.");
+                errorListener.Error(line, "Unterminated string.");
             }
             Advance(); // Closing quotation mark
 

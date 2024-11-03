@@ -1,29 +1,39 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Diagnostics;
 
 namespace UnSospiro
 {
     [TestClass]
     public class InterpreterTest
     {
-        private const string exePath = "../build/unsospiro.exe";
+        private const string exePath = "unsospiro.exe"; // Current directory is the one that contains the executable.
 
-        //[TestMethod]
-        //public void Test_Add()
-        //{
-        //    ProcessStartInfo info = new ProcessStartInfo(exePath);
-        //    info.RedirectStandardInput = true;
-        //    info.RedirectStandardOutput = true;
-        //    Process p = Process.Start(info);
-        //
-        //    StreamWriter writer = p.StandardInput;
-        //    writer.WriteLine("print (2 + 3);");
-        //    writer.Close();
-        //
-        //    string result = p.StandardOutput.ReadToEnd();
-        //    p.WaitForExit();
-        //    
-        //    // TODO: MainProgram writes "> " before every input line so it doesn't work :/
-        //    //Assert.AreEqual(result, "5");
-        //}
+        [TestMethod]
+        public void Test_Add_1()
+        {
+            // Current directory is the one that contains the executable.
+            string scriptFile = "../tests/test_add_1.txt";
+            Assert.IsTrue(File.Exists(scriptFile));
+
+            Process p = Process.Start(exePath, scriptFile);
+            p.WaitForExit();
+            int exitCode = p.ExitCode;
+
+            Assert.IsTrue(exitCode == 0);
+        }
+
+        [TestMethod]
+        public void Test_Add_2()
+        {
+            string scriptFile = "../tests/test_add_2.txt";
+            Assert.IsTrue(File.Exists(scriptFile));
+
+            Process p = Process.Start(exePath, scriptFile);
+            p.WaitForExit();
+            int exitCode = p.ExitCode;
+
+            // Source code is erroneous by intention.
+            Assert.IsTrue(exitCode == 65 || exitCode == 70);
+        }
     }
 }

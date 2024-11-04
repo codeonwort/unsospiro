@@ -19,7 +19,7 @@ namespace UnSospiro
             p.WaitForExit();
             int exitCode = p.ExitCode;
 
-            Assert.IsTrue(exitCode == 0);
+            Assert.AreEqual(exitCode, 0);
         }
 
         [TestMethod]
@@ -34,6 +34,19 @@ namespace UnSospiro
 
             // Source code is erroneous by intention.
             Assert.IsTrue(exitCode == 65 || exitCode == 70);
+        }
+
+        [TestMethod]
+        public void Test_This()
+        {
+            string scriptFile = "../tests/test_this.txt";
+            Assert.IsTrue(File.Exists(scriptFile));
+
+            Process p = Process.Start(exePath, scriptFile);
+            p.WaitForExit();
+            int exitCode = p.ExitCode;
+
+            Assert.AreEqual(exitCode, 0);
         }
     }
 }

@@ -1,6 +1,5 @@
 ﻿namespace UnSospiro
 {
-    // TODO: Use this instead of MainProgram
     internal interface IErrorListener
     {
         public void Error(int line, string message);
@@ -34,7 +33,7 @@
             }
         }
 
-        public MainProgram()
+        private MainProgram()
         {
             interpreter = new Interpreter(this);
         }

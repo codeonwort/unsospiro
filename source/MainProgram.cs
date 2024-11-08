@@ -16,7 +16,6 @@
         private static void Main(string[] args)
         {
             var instance = new MainProgram();
-            //instance.TestAstPrinter();
 
             if (args.Length > 1)
             {
@@ -68,6 +67,8 @@
                 Console.Write("> ");
                 string? line = Console.ReadLine();
                 if (line == null) break;
+                // TODO: Use RunAstPrinter() instead of Run() to debug AST.
+                //RunAstPrinter(line);
                 Run(line);
                 hadError = false;
             }
@@ -88,8 +89,23 @@
             if (hadError) return;
 
             interpreter.Interpret(statements);
-            //Console.WriteLine(new AstPrinter().Print(expression));
-            //foreach (var token in tokens) Console.WriteLine($"{token}");
+        }
+
+        private void RunAstPrinter(string source)
+        {
+            Scanner scanner = new Scanner(source, this);
+            List<Token> tokens = scanner.ScanTokens();
+            Parser parser = new Parser(tokens, this);
+            List<Stmt> statements = parser.Parse();
+
+            if (hadError) return;
+
+            AstPrinter astPrinter = new();
+            foreach (var stmt in statements)
+            {
+                string result = astPrinter.Print(stmt);
+                Console.WriteLine(result);
+            }
         }
 
         #region IErrorListener

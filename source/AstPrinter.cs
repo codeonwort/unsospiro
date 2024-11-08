@@ -2,12 +2,19 @@
 
 namespace UnSospiro
 {
-    internal class AstPrinter : Expr.Visitor<string>
+    internal class AstPrinter : Expr.Visitor<string>, Stmt.Visitor<string>
     {
+        internal string Print(Stmt stmt)
+        {
+            return stmt.Accept(this);
+        }
         internal string Print(Expr expr)
         {
             return expr.Accept(this);
         }
+
+        // ----------------------------------------------------------
+        // Interface: Expr.Visitor
 
         public string VisitAssignExpr(Expr.Assign expr)
         {
@@ -80,6 +87,72 @@ namespace UnSospiro
             return Parenthesize("this", expr);
         }
 
+        // ----------------------------------------------------------
+        // Interface: Stmt.Visitor
+
+        public string VisitBlockStmt(Stmt.Block blockStmt)
+        {
+            StringBuilder writer = new();
+            writer.Append("{\n");
+            foreach (var stmt in blockStmt.statements)
+            {
+                writer.Append($"\t{stmt.Accept(this)}\n");
+            }
+            writer.Append("}");
+            return writer.ToString();
+        }
+        public string VisitClassStmt(Stmt.Class stmt)
+        {
+            // TODO: Correct impl.
+            return Parenthesize($"class {stmt.name.lexeme}");
+        }
+        public string VisitExpressionStmt(Stmt.Expression stmt)
+        {
+            return stmt.expression.Accept(this);
+        }
+        public string VisitFunctionStmt(Stmt.Function stmt)
+        {
+            StringBuilder writer = new();
+            writer.Append($"(function {stmt.name.lexeme} (");
+            for (var i = 0; i < stmt.parameters.Count; ++i)
+            {
+                writer.Append(stmt.parameters[i].lexeme);
+                if (i != stmt.parameters.Count - 1) writer.Append(' ');
+            }
+            writer.Append(")\n");
+            writer.Append(Parenthesize(stmt.body, "\t"));
+            writer.Append(')');
+            return writer.ToString();
+        }
+        public string VisitIfStmt(Stmt.If stmt)
+        {
+            // TODO: Correct impl.
+            return Parenthesize("if");
+        }
+        public string VisitPrintStmt(Stmt.Print stmt)
+        {
+            // TODO: Correct impl.
+            return Parenthesize("print");
+        }
+        public string VisitReturnStmt(Stmt.Return stmt)
+        {
+            // TODO: Correct impl.
+            return Parenthesize("return");
+        }
+        public string VisitVarStmt(Stmt.Var stmt)
+        {
+            // TODO: Correct impl.
+            return Parenthesize($"var {stmt.name.lexeme}");
+        }
+        public string VisitWhileStmt(Stmt.While stmt)
+        {
+            // TODO: Correct impl.
+            return Parenthesize("while");
+        }
+
+        // ----------------------------------------------------------
+        // Utils
+
         private string Parenthesize(string name, params Expr[] exprs)
         {
             StringBuilder writer = new();
@@ -91,6 +164,15 @@ namespace UnSospiro
             }
             writer.Append(')');
 
+            return writer.ToString();
+        }
+        private string Parenthesize(List<Stmt> statements, string indent = "")
+        {
+            StringBuilder writer = new();
+            foreach (var stmt in statements)
+            {
+                writer.Append($"{indent}{stmt.Accept(this)}\n");
+            }
             return writer.ToString();
         }
     }

@@ -44,7 +44,7 @@ namespace UnSospiro
 
         public string VisitVariableExpr(Expr.Variable expr)
         {
-            return $"var {expr.name.lexeme}";
+            return $"(var {expr.name.lexeme})";
         }
 
         public string VisitLogicalExpr(Expr.Logical expr)
@@ -138,8 +138,15 @@ namespace UnSospiro
         }
         public string VisitIfStmt(Stmt.If stmt)
         {
-            // TODO: Correct impl.
-            return Parenthesize("if");
+            StringBuilder writer = new();
+            writer.Append($"(if {stmt.condition.Accept(this)}\n");
+            writer.Append($"then {stmt.thenBranch.Accept(this)}\n");
+            if (stmt.elseBranch != null)
+            {
+                writer.Append($"else {stmt.elseBranch.Accept(this)}\n");
+            }
+            writer.Append(')');
+            return writer.ToString();
         }
         public string VisitPrintStmt(Stmt.Print stmt)
         {
@@ -156,6 +163,12 @@ namespace UnSospiro
         }
         public string VisitWhileStmt(Stmt.While stmt)
         {
+            StringBuilder writer = new();
+            writer.Append($"(while {stmt.condition.Accept(this)}\n");
+            writer.Append(stmt.body.Accept(this));
+            writer.Append(')');
+            return writer.ToString();
+
             // TODO: Correct impl.
             return Parenthesize("while");
         }

@@ -103,8 +103,20 @@ namespace UnSospiro
         }
         public string VisitClassStmt(Stmt.Class stmt)
         {
-            // TODO: Correct impl.
-            return Parenthesize($"class {stmt.name.lexeme}");
+            StringBuilder writer = new();
+            writer.Append($"(class {stmt.name.lexeme}");
+            if (stmt.superclass != null)
+            {
+                writer.Append($" < {stmt.superclass.name.lexeme}");
+            }
+            writer.Append('\n');
+            foreach (var method in stmt.methods)
+            {
+                writer.Append(VisitFunctionStmt(method));
+                writer.Append('\n');
+            }
+            writer.Append(')');
+            return writer.ToString();
         }
         public string VisitExpressionStmt(Stmt.Expression stmt)
         {
@@ -113,7 +125,7 @@ namespace UnSospiro
         public string VisitFunctionStmt(Stmt.Function stmt)
         {
             StringBuilder writer = new();
-            writer.Append($"(function {stmt.name.lexeme} (");
+            writer.Append($"(fun {stmt.name.lexeme} (");
             for (var i = 0; i < stmt.parameters.Count; ++i)
             {
                 writer.Append(stmt.parameters[i].lexeme);
@@ -131,18 +143,16 @@ namespace UnSospiro
         }
         public string VisitPrintStmt(Stmt.Print stmt)
         {
-            // TODO: Correct impl.
-            return Parenthesize("print");
+            return Parenthesize($"print {stmt.expression.Accept(this)}");
         }
         public string VisitReturnStmt(Stmt.Return stmt)
         {
-            // TODO: Correct impl.
-            return Parenthesize("return");
+            return Parenthesize($"return {stmt.value.Accept(this)}");
         }
         public string VisitVarStmt(Stmt.Var stmt)
         {
-            // TODO: Correct impl.
-            return Parenthesize($"var {stmt.name.lexeme}");
+            var init = stmt.initializer != null ? stmt.initializer.Accept(this) : "nil";
+            return Parenthesize($"var {stmt.name.lexeme} {init}");
         }
         public string VisitWhileStmt(Stmt.While stmt)
         {

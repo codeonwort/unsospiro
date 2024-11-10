@@ -58,7 +58,7 @@ namespace UnSospiro
 
         public string VisitSetExpr(Expr.Set expr)
         {
-            return Parenthesize("set {expr.name}", expr.obj, expr.value);
+            return Parenthesize($"set {expr.name.lexeme}", expr.obj, expr.value);
         }
 
         public string VisitSuperExpr(Expr.Super expr)

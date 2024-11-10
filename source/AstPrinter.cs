@@ -79,12 +79,12 @@ namespace UnSospiro
 
         public string VisitGetExpr(Expr.Get expr)
         {
-            return Parenthesize($"get {expr.name}", expr.obj);
+            return $"(get {expr.name.lexeme} {expr.obj.Accept(this)})";
         }
 
         public string VisitThisExpr(Expr.This expr)
         {
-            return Parenthesize("this", expr);
+            return Parenthesize("this");
         }
 
         // ----------------------------------------------------------
@@ -168,9 +168,6 @@ namespace UnSospiro
             writer.Append(stmt.body.Accept(this));
             writer.Append(')');
             return writer.ToString();
-
-            // TODO: Correct impl.
-            return Parenthesize("while");
         }
 
         // ----------------------------------------------------------

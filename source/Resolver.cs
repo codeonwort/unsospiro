@@ -305,7 +305,9 @@
             {
                 if (scopes.ElementAt(i).ContainsKey(name.lexeme))
                 {
-                    interpreter.Resolve(expr, scopes.Count - 1 - i);
+                    // TODO: The book uses (scopes.Count - 1 - i), its companion code in Github also uses (scopes.Count - 1 - i),
+                    // but (scopes.Count - i) is correct for me. I don't know if the book has typo or I implemented something differently...
+                    interpreter.Resolve(expr, scopes.Count - i);
                     return;
                 }
             }

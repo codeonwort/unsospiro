@@ -177,7 +177,6 @@
         public Object VisitSuperExpr(Expr.Super expr)
         {
             int distance = locals[expr];
-            distance += 2; // TODO: Off by two???
             Class superclass = (Class)environment.GetAt(distance, "super");
             Instance obj = (Instance)environment.GetAt(distance - 1, "this");
             Function method = superclass.FindMethod(expr.method.lexeme);
@@ -417,12 +416,6 @@
         {
             if (locals.TryGetValue(expr, out int distance))
             {
-                // TODO: Why off by one bug?
-                if (expr is Expr.This)
-                {
-                    distance += 1;
-                }
-
                 return environment.GetAt(distance, name.lexeme);
             }
             return globals.Get(name);

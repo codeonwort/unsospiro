@@ -1,0 +1,13 @@
+class A {
+  init(x0) {
+    this.x = x0;
+  }
+  foo() {
+    print this.x;
+  }
+}
+
+var a = A(3);
+a.foo();
+a.x = 5;
+a.foo();

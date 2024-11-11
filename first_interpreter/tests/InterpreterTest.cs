@@ -37,6 +37,19 @@ namespace UnSospiro
         }
 
         [TestMethod]
+        public void Test_Class_Init()
+        {
+            string scriptFile = "../tests/test_class_init.txt";
+            Assert.IsTrue(File.Exists(scriptFile));
+
+            Process p = Process.Start(exePath, scriptFile);
+            p.WaitForExit();
+            int exitCode = p.ExitCode;
+
+            Assert.AreEqual(exitCode, 0);
+        }
+
+        [TestMethod]
         public void Test_This()
         {
             string scriptFile = "../tests/test_this.txt";

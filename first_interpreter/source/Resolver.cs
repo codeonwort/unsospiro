@@ -301,13 +301,13 @@
 
         private void ResolveLocal(Expr expr, Token name)
         {
-            for (int i = scopes.Count - 1; i >= 0; --i)
+            // NOTE: The book's source code is written in Java. In Java, Stack.get(0) returns the first element we put in the stack.
+            // In C#, Stack.ElementAt(0) returns the last element we put. They are in reverse order :(
+            for (int i = 0; i < scopes.Count; ++i)
             {
                 if (scopes.ElementAt(i).ContainsKey(name.lexeme))
                 {
-                    // TODO: The book uses (scopes.Count - 1 - i), its companion code in Github also uses (scopes.Count - 1 - i),
-                    // but (scopes.Count - i) is correct for me. I don't know if the book has typo or I implemented something differently...
-                    interpreter.Resolve(expr, scopes.Count - i);
+                    interpreter.Resolve(expr, i);
                     return;
                 }
             }

@@ -147,11 +147,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="source\chunk.c" />
     <ClCompile Include="source\main.cpp" />
+    <ClCompile Include="source\memory.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\chunk.h" />
     <ClInclude Include="source\common.h" />
+    <ClInclude Include="source\memory.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

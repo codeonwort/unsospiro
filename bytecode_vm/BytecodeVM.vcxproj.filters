@@ -15,13 +15,16 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="source\main.cpp">
+    <ClCompile Include="source\main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\chunk.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\memory.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\debug.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -33,6 +36,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="source\memory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="source\debug.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -151,12 +151,14 @@
     <ClCompile Include="source\debug.c" />
     <ClCompile Include="source\main.c" />
     <ClCompile Include="source\memory.c" />
+    <ClCompile Include="source\value.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\chunk.h" />
     <ClInclude Include="source\common.h" />
     <ClInclude Include="source\debug.h" />
     <ClInclude Include="source\memory.h" />
+    <ClInclude Include="source\value.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

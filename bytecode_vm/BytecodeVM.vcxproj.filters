@@ -30,6 +30,9 @@
     <ClCompile Include="source\value.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\vm.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\common.h">
@@ -45,6 +48,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="source\value.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="source\vm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -2,7 +2,7 @@
 
 #include "common.h"
 
-// TODO: Initial size = 8 and growth multiplier = 2. Profile and find optimal parameters.
+// #todo: Initial size = 8 and growth multiplier = 2. Profile and find optimal parameters.
 #define GROW_CAPACITY(capacity) \
 	((capacity) < 8 ? 8 : (capacity * 2))
 

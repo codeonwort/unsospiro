@@ -6,6 +6,7 @@
 // Each operation is represented by one-byte opcode.
 typedef enum {
 	OP_CONSTANT,
+	OP_NEGATE,
 	OP_RETURN,
 } OpCode;
 

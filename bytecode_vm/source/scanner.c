@@ -56,6 +56,10 @@ static void skipWhitespace() {
 	}
 }
 
+static TokenType identifierType() {
+	return TOKEN_IDENTIFIER;
+}
+
 static Token makeToken(TokenType type) {
 	Token token;
 	token.type = type;
@@ -86,7 +90,13 @@ static Token string() {
 	return makeToken(TOKEN_STRING);
 }
 
+static bool isAlpha(char c) { return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || c == '_'; }
 static bool isDigit(char c) { return '0' <= c && c <= '9'; }
+
+static Token identifier() {
+	while (isAlpha(peek()) || isDigit(peek())) advance();
+	return makeToken(identifierType());
+}
 
 static Token number() {
 	while (isDigit(peek())) advance();
@@ -112,6 +122,7 @@ Token scanToken() {
 	if (isAtEnd()) return makeToken(TOKEN_EOF);
 
 	char c = advance();
+	if (isAlpha(c)) return identifier();
 	if (isDigit(c)) return number();
 
 	switch (c) {

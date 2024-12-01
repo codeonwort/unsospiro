@@ -64,6 +64,7 @@ static TokenType checkKeyword(int start, int length, const char* rest, TokenType
 }
 
 static TokenType identifierType() {
+	// #todo: Support string interpolation
 	switch (scanner.start[0]) {
 		case 'a': return checkKeyword(1, 2, "nd", TOKEN_AND);
 		case 'c': return checkKeyword(1, 4, "lass", TOKEN_CLASS);

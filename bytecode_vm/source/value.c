@@ -25,5 +25,5 @@ void freeValueArray(ValueArray* array) {
 
 void printValue(Value value) {
 	// %g specificer: https://en.cppreference.com/w/c/io/fprintf
-	printf("%g", value);
+	printf("%g", AS_NUMBER(value));
 }

@@ -3,20 +3,42 @@
 #include "compiler.h"
 #include "debug.h"
 
+#include <stdarg.h>
 #include <stdio.h>
 
 static void resetStack(VM* vm) {
 	vm->stackTop = vm->stack;
 }
 
+static void runtimeError(VM* vm, const char* format, ...) {
+	va_list args;
+	va_start(args, format);
+	vfprintf_s(stderr, format, args);
+	va_end(args);
+	fputs("\n", stderr);
+
+	size_t instruction = vm->ip - vm->chunk->code - 1;
+	int line = vm->chunk->lines[instruction];
+	fprintf_s(stderr, "[line %d] in script\n", line);
+	resetStack(vm);
+}
+
+static Value peek(VM* vm, int distance) {
+	return vm->stackTop[-1 - distance];
+}
+
 static InterpretResult run(VM* vm) {
 #define READ_BYTE() (*(vm->ip++))
 #define READ_CONSTANT() (vm->chunk->constants.values[READ_BYTE()])
-#define BINARY_OP(vm, op) \
+#define BINARY_OP(vm, valueType, op) \
 	do { \
-		double b = pop(vm); \
-		double a = pop(vm); \
-		push(vm, a op b); \
+		if (!IS_NUMBER(peek(vm, 0)) || !IS_NUMBER(peek(vm, 1))) { \
+			runtimeError(vm, "Operands must be numbers."); \
+			return INTERPRET_RUNTIME_ERROR; \
+		} \
+		double b = AS_NUMBER(pop(vm)); \
+		double a = AS_NUMBER(pop(vm)); \
+		push(vm, valueType(a op b)); \
 	} while (false)
 
 	// Most performance-critical section in the entire VM.
@@ -44,12 +66,16 @@ static InterpretResult run(VM* vm) {
 				push(vm, constant);
 				break;
 			}
-			case OP_ADD: BINARY_OP(vm, +); break;
-			case OP_SUBTRACT: BINARY_OP(vm, -); break;
-			case OP_MULTIPLY: BINARY_OP(vm, *); break;
-			case OP_DIVIDE: BINARY_OP(vm, /); break;
+			case OP_ADD: BINARY_OP(vm, NUMBER_VAL, +); break;
+			case OP_SUBTRACT: BINARY_OP(vm, NUMBER_VAL, -); break;
+			case OP_MULTIPLY: BINARY_OP(vm, NUMBER_VAL, *); break;
+			case OP_DIVIDE: BINARY_OP(vm, NUMBER_VAL, /); break;
 			case OP_NEGATE: {
-				push(vm, -pop(vm));
+				if (!IS_NUMBER(peek(vm, 0))) {
+					runtimeError(vm, "Operand must be a number.");
+					return INTERPRET_RUNTIME_ERROR;
+				}
+				push(vm, NUMBER_VAL(-AS_NUMBER(pop(vm))));
 				break;
 			}
 			case OP_RETURN: {

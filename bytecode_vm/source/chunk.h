@@ -6,6 +6,9 @@
 // Each operation is represented by one-byte opcode.
 typedef enum {
 	OP_CONSTANT,
+	OP_NIL,
+	OP_TRUE,
+	OP_FALSE,
 	OP_ADD,
 	OP_SUBTRACT,
 	OP_MULTIPLY,

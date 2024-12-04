@@ -27,6 +27,11 @@ static Value peek(VM* vm, int distance) {
 	return vm->stackTop[-1 - distance];
 }
 
+static bool isFalsey(Value value) {
+	// #todo: Number 0 is falsey
+	return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value)) || (IS_NUMBER(value) && AS_NUMBER(value) == 0.0);
+}
+
 static InterpretResult run(VM* vm) {
 #define READ_BYTE() (*(vm->ip++))
 #define READ_CONSTANT() (vm->chunk->constants.values[READ_BYTE()])
@@ -73,6 +78,7 @@ static InterpretResult run(VM* vm) {
 			case OP_SUBTRACT: BINARY_OP(vm, NUMBER_VAL, -); break;
 			case OP_MULTIPLY: BINARY_OP(vm, NUMBER_VAL, *); break;
 			case OP_DIVIDE: BINARY_OP(vm, NUMBER_VAL, /); break;
+			case OP_NOT: push(vm, BOOL_VAL(isFalsey(pop(vm)))); break;
 			case OP_NEGATE: {
 				if (!IS_NUMBER(peek(vm, 0))) {
 					runtimeError(vm, "Operand must be a number.");

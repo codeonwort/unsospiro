@@ -2,6 +2,16 @@
 #include "memory.h"
 #include <stdio.h>
 
+bool valuesEqual(Value a, Value b) {
+	if (a.type != b.type) return false;
+	switch (a.type) {
+		case VAL_BOOL:   return AS_BOOL(a) == AS_BOOL(b);
+		case VAL_NIL:    return true;
+		case VAL_NUMBER: return AS_NUMBER(a) == AS_NUMBER(b);
+		default:         return false;
+	}
+}
+
 void initValueArray(ValueArray* array) {
 	array->capacity = 0;
 	array->count = 0;

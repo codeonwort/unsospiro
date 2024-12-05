@@ -65,5 +65,8 @@
     <ClInclude Include="source\scanner.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="source\object.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

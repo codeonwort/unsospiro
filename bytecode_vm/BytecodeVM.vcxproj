@@ -162,6 +162,7 @@
     <ClInclude Include="source\compiler.h" />
     <ClInclude Include="source\debug.h" />
     <ClInclude Include="source\memory.h" />
+    <ClInclude Include="source\object.h" />
     <ClInclude Include="source\scanner.h" />
     <ClInclude Include="source\value.h" />
     <ClInclude Include="source\vm.h" />

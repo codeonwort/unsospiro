@@ -152,6 +152,7 @@
     <ClCompile Include="source\debug.c" />
     <ClCompile Include="source\main.c" />
     <ClCompile Include="source\memory.c" />
+    <ClCompile Include="source\object.c" />
     <ClCompile Include="source\scanner.c" />
     <ClCompile Include="source\value.c" />
     <ClCompile Include="source\vm.c" />

@@ -39,6 +39,9 @@
     <ClCompile Include="source\scanner.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\object.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\common.h">

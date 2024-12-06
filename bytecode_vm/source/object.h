@@ -24,6 +24,8 @@ struct ObjString {
 	char* chars;
 };
 
+ObjString* copyString(const char* chars, int length);
+
 // Should not be a macro, if so 'value' will be evaluated twice.
 static inline bool isObjType(Value value, ObjType type) {
 	return IS_OBJ(value) && AS_OBJ(value)->type == type;

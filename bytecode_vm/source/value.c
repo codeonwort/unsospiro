@@ -1,5 +1,7 @@
 #include "value.h"
+#include "object.h"
 #include "memory.h"
+
 #include <stdio.h>
 
 bool valuesEqual(Value a, Value b) {
@@ -44,6 +46,9 @@ void printValue(Value value) {
 			break;
 		case VAL_NUMBER:
 			printf("%g", AS_NUMBER(value));
+			break;
+		case VAL_OBJ:
+			printObject(value);
 			break;
 	}
 }

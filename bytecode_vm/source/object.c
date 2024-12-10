@@ -6,31 +6,34 @@
 #include <stdio.h>
 #include <string.h>
 
-#define ALLOCATE_OBJ(type, objectType) \
-	(type*)allocateObject(sizeof(type), objectType)
+#define ALLOCATE_OBJ(vm, type, objectType) \
+	(type*)allocateObject(vm, sizeof(type), objectType)
 
-static Obj* allocateObject(size_t size, ObjType type) {
+static Obj* allocateObject(VM* vm, size_t size, ObjType type) {
 	Obj* object = (Obj*)reallocate(NULL, 0, size);
 	object->type = type;
+
+	object->next = vm->objects;
+	vm->objects = object;
 	return object;
 }
 
-static ObjString* allocateString(char* chars, int length) {
-	ObjString* string = ALLOCATE_OBJ(ObjString, OBJ_STRING);
+static ObjString* allocateString(VM* vm, char* chars, int length) {
+	ObjString* string = ALLOCATE_OBJ(vm, ObjString, OBJ_STRING);
 	string->length = length;
 	string->chars = chars;
 	return string;
 }
 
-ObjString* takeString(char* chars, int length) {
-	return allocateString(chars, length);
+ObjString* takeString(VM* vm, char* chars, int length) {
+	return allocateString(vm, chars, length);
 }
 
-ObjString* copyString(const char* chars, int length) {
+ObjString* copyString(VM* vm, const char* chars, int length) {
 	char* heapChars = ALLOCATE(char, length + 1);
 	memcpy_s(heapChars, length, chars, length);
 	heapChars[length] = '\0';
-	return allocateString(heapChars, length);
+	return allocateString(vm, heapChars, length);
 }
 
 void printObject(Value value) {

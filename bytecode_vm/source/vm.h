@@ -11,6 +11,7 @@ typedef struct {
 	uint8_t* ip; // instruction pointer (or program counter) to next instruction to be executed
 	Value stack[STACK_MAX];
 	Value* stackTop; // location where in next value will be pushed
+	Obj* objects;
 } VM;
 
 typedef enum {

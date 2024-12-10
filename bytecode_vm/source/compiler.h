@@ -3,4 +3,4 @@
 #include "object.h"
 #include "vm.h"
 
-bool compile(const char* source, Chunk* chunk);
+bool compile(VM* vm, const char* source, Chunk* chunk);

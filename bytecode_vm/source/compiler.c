@@ -29,7 +29,7 @@ typedef enum {
 	PREC_PRIMARY
 } Precedence;
 
-typedef void (*ParseFn)(Parser* parser);
+typedef void (*ParseFn)(VM* vm, Parser* parser);
 
 typedef struct {
 	ParseFn prefix;
@@ -122,14 +122,14 @@ static void endCompiler(Parser* parser) {
 #endif
 }
 
-static void expression(Parser* parser);
+static void expression(VM* vm, Parser* parser);
 static ParseRule* getRule(TokenType type);
-static void parsePrecedence(Parser* parser, Precedence precedence);
+static void parsePrecedence(VM* vm, Parser* parser, Precedence precedence);
 
-static void binary(Parser* parser) {
+static void binary(VM* vm, Parser* parser) {
 	TokenType operatorType = parser->previous.type;
 	ParseRule* rule = getRule(operatorType);
-	parsePrecedence(parser, (Precedence)(rule->precedence + 1));
+	parsePrecedence(vm, parser, (Precedence)(rule->precedence + 1));
 
 	switch (operatorType) {
 		case TOKEN_BANG_EQUAL: emitBytes(parser, OP_EQUAL, OP_NOT); break;
@@ -146,7 +146,7 @@ static void binary(Parser* parser) {
 	}
 }
 
-static void literal(Parser* parser) {
+static void literal(VM* vm, Parser* parser) {
 	switch (parser->previous.type) {
 		case TOKEN_FALSE: emitByte(parser, OP_FALSE); break;
 		case TOKEN_NIL: emitByte(parser, OP_NIL); break;
@@ -155,25 +155,25 @@ static void literal(Parser* parser) {
 	}
 }
 
-static void grouping(Parser* parser) {
-	expression(parser);
+static void grouping(VM* vm, Parser* parser) {
+	expression(vm, parser);
 	consume(parser, TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
 }
 
-static void number(Parser* parser) {
+static void number(VM* vm, Parser* parser) {
 	double value = strtod(parser->previous.start, NULL);
 	emitConstant(parser, NUMBER_VAL(value));
 }
 
-static void string(Parser* parser) {
-	emitConstant(parser, OBJ_VAL(copyString(parser->previous.start + 1, parser->previous.length - 2)));
+static void string(VM* vm, Parser* parser) {
+	emitConstant(parser, OBJ_VAL(copyString(vm, parser->previous.start + 1, parser->previous.length - 2)));
 }
 
-static void unary(Parser* parser) {
+static void unary(VM* vm, Parser* parser) {
 	TokenType operatorType = parser->previous.type;
 
 	// Compile operands
-	parsePrecedence(parser, PREC_UNARY);
+	parsePrecedence(vm, parser, PREC_UNARY);
 	// Emit operator instruction
 	switch (operatorType) {
 		case TOKEN_BANG: emitByte(parser, OP_NOT); break;
@@ -225,19 +225,19 @@ ParseRule rules[] = {
 	[TOKEN_EOF]           = {NULL,     NULL,   PREC_NONE},
 };
 
-static void parsePrecedence(Parser* parser, Precedence precedence) {
+static void parsePrecedence(VM* vm, Parser* parser, Precedence precedence) {
 	advance(parser);
 	ParseFn prefixRule = getRule(parser->previous.type)->prefix;
 	if (prefixRule == NULL) {
 		error(parser, "Expect expression.");
 		return;
 	}
-	prefixRule(parser);
+	prefixRule(vm, parser);
 
 	while (precedence <= getRule(parser->current.type)->precedence) {
 		advance(parser);
 		ParseFn infixRule = getRule(parser->previous.type)->infix;
-		infixRule(parser);
+		infixRule(vm, parser);
 	}
 }
 
@@ -245,11 +245,11 @@ static ParseRule* getRule(TokenType type) {
 	return &rules[type];
 }
 
-static void expression(Parser* parser) {
-	parsePrecedence(parser, PREC_ASSIGNMENT);
+static void expression(VM* vm, Parser* parser) {
+	parsePrecedence(vm, parser, PREC_ASSIGNMENT);
 }
 
-bool compile(const char* source, Chunk* chunk) {
+bool compile(VM* vm, const char* source, Chunk* chunk) {
 	Parser parser;
 	compilingChunk = chunk;
 
@@ -259,7 +259,7 @@ bool compile(const char* source, Chunk* chunk) {
 	parser.panicMode = false;
 
 	advance(&parser);
-	expression(&parser);
+	expression(vm, &parser);
 	consume(&parser, TOKEN_EOF, "Expect end of expression.");
 	endCompiler(&parser);
 

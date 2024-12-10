@@ -2,6 +2,7 @@
 
 #include "common.h"
 #include "value.h"
+#include "vm.h" // #todo: Replace with forward decl of VM?
 
 #define OBJ_TYPE(value)        (AS_OBJ(value)->type)
 
@@ -16,6 +17,7 @@ typedef enum {
 
 struct Obj {
 	ObjType type;
+	struct Obj* next;
 };
 
 struct ObjString {
@@ -24,8 +26,8 @@ struct ObjString {
 	char* chars;
 };
 
-ObjString* takeString(char* chars, int length);
-ObjString* copyString(const char* chars, int length);
+ObjString* takeString(VM* vm, char* chars, int length);
+ObjString* copyString(VM* vm, const char* chars, int length);
 void printObject(Value value);
 
 // Should not be a macro, if so 'value' will be evaluated twice.

@@ -45,7 +45,7 @@ static void concatenate(VM* vm) {
 	memcpy_s(chars + a->length, b->length, b->chars, b->length);
 	chars[length] = '\0';
 
-	ObjString* result = takeString(chars, length);
+	ObjString* result = takeString(vm, chars, length);
 	push(vm, OBJ_VAL(result));
 }
 
@@ -139,17 +139,18 @@ static InterpretResult run(VM* vm) {
 
 void initVM(VM* vm) {
 	resetStack(vm);
+	vm->objects = NULL;
 }
 
 void freeVM(VM* vm) {
-	//
+	freeObjects(vm);
 }
 
 InterpretResult interpret(VM* vm, const char* source) {
 	Chunk chunk;
 	initChunk(&chunk);
 
-	if (!compile(source, &chunk)) {
+	if (!compile(vm, source, &chunk)) {
 		freeChunk(&chunk);
 		return INTERPRET_COMPILE_ERROR;
 	}

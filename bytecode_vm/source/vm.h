@@ -1,6 +1,7 @@
 #pragma once
 
 #include "chunk.h"
+#include "table.h"
 #include "value.h"
 
 // #todo: Temp stack size
@@ -11,6 +12,7 @@ typedef struct {
 	uint8_t* ip; // instruction pointer (or program counter) to next instruction to be executed
 	Value stack[STACK_MAX];
 	Value* stackTop; // location where in next value will be pushed
+	Table strings; // Store all strings in a hash table for string interning
 	Obj* objects;
 } VM;
 

@@ -140,9 +140,11 @@ static InterpretResult run(VM* vm) {
 void initVM(VM* vm) {
 	resetStack(vm);
 	vm->objects = NULL;
+	initTable(&vm->strings);
 }
 
 void freeVM(VM* vm) {
+	freeTable(&vm->strings);
 	freeObjects(vm);
 }
 

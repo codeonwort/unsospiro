@@ -100,6 +100,7 @@ static InterpretResult run(VM* vm) {
 			case OP_GREATER: BINARY_OP(vm, BOOL_VAL, >); break;
 			case OP_LESS: BINARY_OP(vm, BOOL_VAL, <); break;
 			case OP_ADD: {
+				// OP_ADD's stack effect is -1. (pop 2, push 1)
 				if (IS_STRING(peek(vm, 0)) && IS_STRING(peek(vm, 1))) {
 					concatenate(vm);
 				} else if (IS_NUMBER(peek(vm, 0)) && IS_NUMBER(peek(vm, 1))) {
@@ -124,9 +125,13 @@ static InterpretResult run(VM* vm) {
 				push(vm, NUMBER_VAL(-AS_NUMBER(pop(vm))));
 				break;
 			}
-			case OP_RETURN: {
+			case OP_PRINT: {
+				// OP_PRINT's stack effect is zero.
 				printValue(pop(vm));
 				printf("\n");
+				break;
+			}
+			case OP_RETURN: {
 				return INTERPRET_OK; // #todo: No function yet; just exit for now.
 			}
 		}

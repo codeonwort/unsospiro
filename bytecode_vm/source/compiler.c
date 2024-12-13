@@ -8,6 +8,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+//
+// statement   -> exprStmt | printStmt ;
+// declaration -> varDecl | statement ;
+//
+
 typedef struct {
 	Token current;
 	Token previous;
@@ -87,6 +92,16 @@ static void consume(Parser* parser, TokenType type, const char* message) {
 	errorAtCurrent(parser, message);
 }
 
+static bool check(Parser* parser, TokenType type) {
+	return parser->current.type == type;
+}
+
+static bool match(Parser* parser, TokenType type) {
+	if (!check(parser, type)) return false;
+	advance(parser);
+	return true;
+}
+
 static void emitByte(Parser* parser, uint8_t byte) {
 	writeChunk(currentChunk(), byte, parser->previous.line);
 }
@@ -123,6 +138,8 @@ static void endCompiler(Parser* parser) {
 }
 
 static void expression(VM* vm, Parser* parser);
+static void statement(VM* vm, Parser* parser);
+static void declaration(VM* vm, Parser* parser);
 static ParseRule* getRule(TokenType type);
 static void parsePrecedence(VM* vm, Parser* parser, Precedence precedence);
 
@@ -249,6 +266,22 @@ static void expression(VM* vm, Parser* parser) {
 	parsePrecedence(vm, parser, PREC_ASSIGNMENT);
 }
 
+static void printStatement(VM* vm, Parser* parser) {
+	expression(vm, parser);
+	consume(parser, TOKEN_SEMICOLON, "Expect ';' after value.");
+	emitByte(parser, OP_PRINT);
+}
+
+static void declaration(VM* vm, Parser* parser) {
+	statement(vm, parser);
+}
+
+static void statement(VM* vm, Parser* parser) {
+	if (match(parser, TOKEN_PRINT)) {
+		printStatement(vm, parser);
+	}
+}
+
 bool compile(VM* vm, const char* source, Chunk* chunk) {
 	Parser parser;
 	compilingChunk = chunk;
@@ -259,8 +292,11 @@ bool compile(VM* vm, const char* source, Chunk* chunk) {
 	parser.panicMode = false;
 
 	advance(&parser);
-	expression(vm, &parser);
-	consume(&parser, TOKEN_EOF, "Expect end of expression.");
+
+	while (!match(&parser, TOKEN_EOF)) {
+		declaration(vm, &parser);
+	}
+
 	endCompiler(&parser);
 
 	return !parser.hadError;

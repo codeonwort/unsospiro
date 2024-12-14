@@ -266,6 +266,12 @@ static void expression(VM* vm, Parser* parser) {
 	parsePrecedence(vm, parser, PREC_ASSIGNMENT);
 }
 
+static void expressionStatement(VM* vm, Parser* parser) {
+	expression(vm, parser);
+	consume(parser, TOKEN_SEMICOLON, "Expect ';' after expression.");
+	emitByte(parser, OP_POP);
+}
+
 static void printStatement(VM* vm, Parser* parser) {
 	expression(vm, parser);
 	consume(parser, TOKEN_SEMICOLON, "Expect ';' after value.");
@@ -279,6 +285,8 @@ static void declaration(VM* vm, Parser* parser) {
 static void statement(VM* vm, Parser* parser) {
 	if (match(parser, TOKEN_PRINT)) {
 		printStatement(vm, parser);
+	} else {
+		expressionStatement(vm, parser);
 	}
 }
 

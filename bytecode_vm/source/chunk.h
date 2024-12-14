@@ -9,6 +9,7 @@ typedef enum {
 	OP_NIL,
 	OP_TRUE,
 	OP_FALSE,
+	OP_POP,
 	// #todo: NOT_EQUAL, LEQUAL, GEQUAL
 	OP_EQUAL,
 	OP_GREATER,

@@ -278,8 +278,32 @@ static void printStatement(VM* vm, Parser* parser) {
 	emitByte(parser, OP_PRINT);
 }
 
+static void synchronize(Parser* parser) {
+	parser->panicMode = false;
+
+	while (parser->current.type != TOKEN_EOF) {
+		switch (parser->current.type) {
+			case TOKEN_CLASS:
+			case TOKEN_FUN:
+			case TOKEN_VAR:
+			case TOKEN_FOR:
+			case TOKEN_IF:
+			case TOKEN_WHILE:
+			case TOKEN_PRINT:
+			case TOKEN_RETURN:
+				return;
+			default:
+				; // Do nothing
+		}
+
+		advance(parser);
+	}
+}
+
 static void declaration(VM* vm, Parser* parser) {
 	statement(vm, parser);
+
+	if (parser->panicMode) synchronize(parser);
 }
 
 static void statement(VM* vm, Parser* parser) {

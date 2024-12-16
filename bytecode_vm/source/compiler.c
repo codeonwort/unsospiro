@@ -143,6 +143,19 @@ static void declaration(VM* vm, Parser* parser);
 static ParseRule* getRule(TokenType type);
 static void parsePrecedence(VM* vm, Parser* parser, Precedence precedence);
 
+static uint8_t identifierConstant(VM* vm, Parser* parser, Token* name) {
+	return makeConstant(parser, OBJ_VAL(copyString(vm, name->start, name->length)));
+}
+
+static uint8_t parseVariable(VM* vm, Parser* parser, const char* errorMessage) {
+	consume(parser, TOKEN_IDENTIFIER, errorMessage);
+	return identifierConstant(vm, parser, &parser->previous);
+}
+
+static void defineVariable(Parser* parser, uint8_t global) {
+	emitBytes(parser, OP_DEFINE_GLOBAL, global);
+}
+
 static void binary(VM* vm, Parser* parser) {
 	TokenType operatorType = parser->previous.type;
 	ParseRule* rule = getRule(operatorType);
@@ -266,6 +279,19 @@ static void expression(VM* vm, Parser* parser) {
 	parsePrecedence(vm, parser, PREC_ASSIGNMENT);
 }
 
+static void varDeclaration(VM* vm, Parser* parser) {
+	uint8_t global = parseVariable(vm, parser, "Expect variable name.");
+
+	if (match(parser, TOKEN_EQUAL)) {
+		expression(vm, parser);
+	} else {
+		emitByte(parser, OP_NIL);
+	}
+	consume(parser, TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
+
+	defineVariable(parser, global);
+}
+
 static void expressionStatement(VM* vm, Parser* parser) {
 	expression(vm, parser);
 	consume(parser, TOKEN_SEMICOLON, "Expect ';' after expression.");
@@ -301,7 +327,11 @@ static void synchronize(Parser* parser) {
 }
 
 static void declaration(VM* vm, Parser* parser) {
-	statement(vm, parser);
+	if (match(parser, TOKEN_VAR)) {
+		varDeclaration(vm, parser);
+	} else {
+		statement(vm, parser);
+	}
 
 	if (parser->panicMode) synchronize(parser);
 }

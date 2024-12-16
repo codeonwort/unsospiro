@@ -10,6 +10,7 @@ typedef enum {
 	OP_TRUE,
 	OP_FALSE,
 	OP_POP,
+	OP_DEFINE_GLOBAL,
 	// #todo: NOT_EQUAL, LEQUAL, GEQUAL
 	OP_EQUAL,
 	OP_GREATER,

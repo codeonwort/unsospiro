@@ -93,6 +93,16 @@ static InterpretResult run(VM* vm) {
 			case OP_TRUE: push(vm, BOOL_VAL(true)); break;
 			case OP_FALSE: push(vm, BOOL_VAL(false)); break;
 			case OP_POP: pop(vm); break;
+			case OP_GET_GLOBAL: {
+				ObjString* name = READ_STRING();
+				Value value;
+				if (!tableGet(&vm->globals, name, &value)) {
+					runtimeError(vm, "Undefined variable '%s'.", name->chars);
+					return INTERPRET_RUNTIME_ERROR;
+				}
+				push(vm, value);
+				break;
+			}
 			case OP_DEFINE_GLOBAL: {
 				ObjString* name = READ_STRING();
 				tableSet(&vm->globals, name, peek(vm, 0));

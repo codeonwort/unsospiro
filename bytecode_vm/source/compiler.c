@@ -34,7 +34,7 @@ typedef enum {
 	PREC_PRIMARY
 } Precedence;
 
-typedef void (*ParseFn)(VM* vm, Parser* parser);
+typedef void (*ParseFn)(VM* vm, Parser* parser, bool canAssign);
 
 typedef struct {
 	ParseFn prefix;
@@ -156,7 +156,7 @@ static void defineVariable(Parser* parser, uint8_t global) {
 	emitBytes(parser, OP_DEFINE_GLOBAL, global);
 }
 
-static void binary(VM* vm, Parser* parser) {
+static void binary(VM* vm, Parser* parser, bool canAssign) {
 	TokenType operatorType = parser->previous.type;
 	ParseRule* rule = getRule(operatorType);
 	parsePrecedence(vm, parser, (Precedence)(rule->precedence + 1));
@@ -176,7 +176,7 @@ static void binary(VM* vm, Parser* parser) {
 	}
 }
 
-static void literal(VM* vm, Parser* parser) {
+static void literal(VM* vm, Parser* parser, bool canAssign) {
 	switch (parser->previous.type) {
 		case TOKEN_FALSE: emitByte(parser, OP_FALSE); break;
 		case TOKEN_NIL: emitByte(parser, OP_NIL); break;
@@ -185,30 +185,36 @@ static void literal(VM* vm, Parser* parser) {
 	}
 }
 
-static void grouping(VM* vm, Parser* parser) {
+static void grouping(VM* vm, Parser* parser, bool canAssign) {
 	expression(vm, parser);
 	consume(parser, TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
 }
 
-static void number(VM* vm, Parser* parser) {
+static void number(VM* vm, Parser* parser, bool canAssign) {
 	double value = strtod(parser->previous.start, NULL);
 	emitConstant(parser, NUMBER_VAL(value));
 }
 
-static void string(VM* vm, Parser* parser) {
+static void string(VM* vm, Parser* parser, bool canAssign) {
 	emitConstant(parser, OBJ_VAL(copyString(vm, parser->previous.start + 1, parser->previous.length - 2)));
 }
 
-static void namedVariable(VM* vm, Parser* parser, Token name) {
+static void namedVariable(VM* vm, Parser* parser, Token name, bool canAssign) {
 	uint8_t arg = identifierConstant(vm, parser, &name);
-	emitBytes(parser, OP_GET_GLOBAL, arg);
+
+	if (canAssign && match(parser, TOKEN_EQUAL)) {
+		expression(vm, parser);
+		emitBytes(parser, OP_SET_GLOBAL, arg);
+	} else {
+		emitBytes(parser, OP_GET_GLOBAL, arg);
+	}
 }
 
-static void variable(VM* vm, Parser* parser) {
-	namedVariable(vm, parser, parser->previous);
+static void variable(VM* vm, Parser* parser, bool canAssign) {
+	namedVariable(vm, parser, parser->previous, canAssign);
 }
 
-static void unary(VM* vm, Parser* parser) {
+static void unary(VM* vm, Parser* parser, bool canAssign) {
 	TokenType operatorType = parser->previous.type;
 
 	// Compile operands
@@ -271,12 +277,18 @@ static void parsePrecedence(VM* vm, Parser* parser, Precedence precedence) {
 		error(parser, "Expect expression.");
 		return;
 	}
-	prefixRule(vm, parser);
+
+	bool canAssign = precedence <= PREC_ASSIGNMENT;
+	prefixRule(vm, parser, canAssign);
 
 	while (precedence <= getRule(parser->current.type)->precedence) {
 		advance(parser);
 		ParseFn infixRule = getRule(parser->previous.type)->infix;
-		infixRule(vm, parser);
+		infixRule(vm, parser, canAssign);
+	}
+
+	if (canAssign && match(parser, TOKEN_EQUAL)) {
+		error(parser, "Invalid assignment target.");
 	}
 }
 

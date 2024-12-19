@@ -96,7 +96,9 @@ static InterpretResult run(VM* vm) {
 			case OP_GET_GLOBAL: {
 				ObjString* name = READ_STRING();
 				Value value;
+				// #todo: Accessing hash table every time is slow.
 				if (!tableGet(&vm->globals, name, &value)) {
+					// #todo: If executing from file, this could be reported at compile-time.
 					runtimeError(vm, "Undefined variable '%s'.", name->chars);
 					return INTERPRET_RUNTIME_ERROR;
 				}
@@ -111,6 +113,7 @@ static InterpretResult run(VM* vm) {
 			}
 			case OP_SET_GLOBAL: {
 				ObjString* name = READ_STRING();
+				// #todo: If undefined variable, add then remove an entry to no avail.
 				if (tableSet(&vm->globals, name, peek(vm, 0))) {
 					tableDelete(&vm->globals, name);
 					runtimeError(vm, "Undefined variable '%s'.", name->chars);

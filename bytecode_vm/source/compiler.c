@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 //
 // statement   -> exprStmt | printStmt ;
@@ -42,7 +43,20 @@ typedef struct {
 	Precedence precedence;
 } ParseRule;
 
-Chunk* compilingChunk; // #todo: No global variable
+typedef struct {
+	Token name;
+	int depth; // 0 = global scope, 1 = top level block, ...
+} Local;
+
+typedef struct {
+	Local locals[UINT8_COUNT];
+	int localCount;
+	int scopeDepth;
+} Compiler;
+
+// #todo: Don't use global variables. Maybe need a context struct for vm + parser + these variables?
+Compiler* current = NULL;
+Chunk* compilingChunk;
 
 static Chunk* currentChunk() {
 	return compilingChunk;
@@ -128,6 +142,12 @@ static void emitConstant(Parser* parser, Value value) {
 	emitBytes(parser, OP_CONSTANT, makeConstant(parser, value));
 }
 
+static void initCompiler(Compiler* compiler) {
+	compiler->localCount = 0;
+	compiler->scopeDepth = 0;
+	current = compiler;
+}
+
 static void endCompiler(Parser* parser) {
 	emitReturn(parser);
 #if DEBUG_PRINT_CODE
@@ -135,6 +155,19 @@ static void endCompiler(Parser* parser) {
 		disassembleChunk(currentChunk(), "code");
 	}
 #endif
+}
+
+static void beginScope() {
+	current->scopeDepth++;
+}
+
+static void endScope(Parser* parser) {
+	current->scopeDepth--;
+
+	while (current->localCount > 0 && current->locals[current->localCount - 1].depth > current->scopeDepth) {
+		emitByte(parser, OP_POP);
+		current->localCount--;
+	}
 }
 
 static void expression(VM* vm, Parser* parser);
@@ -147,12 +180,54 @@ static uint8_t identifierConstant(VM* vm, Parser* parser, Token* name) {
 	return makeConstant(parser, OBJ_VAL(copyString(vm, name->start, name->length)));
 }
 
+static bool identifiersEqual(Token* a, Token* b) {
+	if (a->length != b->length) return false;
+	return 0 == memcmp(a->start, b->start, a->length);
+}
+
+static void addLocal(Parser* parser, Token name) {
+	if (current->localCount == UINT8_COUNT) {
+		error(parser, "Too many local variables in function.");
+		return;
+	}
+
+	Local* local = &current->locals[current->localCount++];
+	local->name = name;
+	local->depth = current->scopeDepth;
+}
+
+static void declareVariable(VM* vm, Parser* parser) {
+	if (current->scopeDepth == 0) return;
+
+	Token* name = &parser->previous;
+	for (int i = (int)(current->localCount) - 1; i >= 0; --i) {
+		Local* local = &current->locals[i];
+		if (local->depth != -1 && local->depth < current->scopeDepth) {
+			break;
+		}
+
+		if (identifiersEqual(name, &local->name)) {
+			error(parser, "A variable with this name already exists in this scope.");
+		}
+	}
+
+	addLocal(parser, *name);
+}
+
 static uint8_t parseVariable(VM* vm, Parser* parser, const char* errorMessage) {
 	consume(parser, TOKEN_IDENTIFIER, errorMessage);
+
+	declareVariable(vm, parser);
+	if (current->scopeDepth > 0) return 0;
+
 	return identifierConstant(vm, parser, &parser->previous);
 }
 
 static void defineVariable(Parser* parser, uint8_t global) {
+	if (current->scopeDepth > 0) {
+		return;
+	}
+
 	emitBytes(parser, OP_DEFINE_GLOBAL, global);
 }
 
@@ -300,6 +375,13 @@ static void expression(VM* vm, Parser* parser) {
 	parsePrecedence(vm, parser, PREC_ASSIGNMENT);
 }
 
+static void block(VM* vm, Parser* parser) {
+	while (!check(parser, TOKEN_RIGHT_BRACE) && !check(parser, TOKEN_EOF)) {
+		declaration(vm, parser);
+	}
+	consume(parser, TOKEN_RIGHT_BRACE, "Expect '}' after block.");
+}
+
 static void varDeclaration(VM* vm, Parser* parser) {
 	uint8_t global = parseVariable(vm, parser, "Expect variable name.");
 
@@ -360,6 +442,10 @@ static void declaration(VM* vm, Parser* parser) {
 static void statement(VM* vm, Parser* parser) {
 	if (match(parser, TOKEN_PRINT)) {
 		printStatement(vm, parser);
+	} else if (match(parser, TOKEN_LEFT_BRACE)) {
+		beginScope();
+		block(vm, parser);
+		endScope(parser);
 	} else {
 		expressionStatement(vm, parser);
 	}
@@ -367,6 +453,10 @@ static void statement(VM* vm, Parser* parser) {
 
 bool compile(VM* vm, const char* source, Chunk* chunk) {
 	Parser parser;
+
+	Compiler compiler;
+	initCompiler(&compiler);
+
 	compilingChunk = chunk;
 
 	initScanner(source);

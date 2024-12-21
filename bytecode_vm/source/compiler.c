@@ -125,6 +125,15 @@ static void emitBytes(Parser* parser, uint8_t byte1, uint8_t byte2) {
 	emitByte(parser, byte2);
 }
 
+static int emitJump(Parser* parser, uint8_t instruction) {
+	// Backpatching; here, emit jump instruction first with placeholder offsets.
+	// they will be replaced by real offsets after 'then' branch is compiled.
+	emitByte(parser, instruction);
+	emitByte(parser, 0xff);
+	emitByte(parser, 0xff);
+	return currentChunk()->count - 2;
+}
+
 static void emitReturn(Parser* parser) {
 	emitByte(parser, OP_RETURN);
 }
@@ -140,6 +149,18 @@ static uint8_t makeConstant(Parser* parser, Value value) {
 
 static void emitConstant(Parser* parser, Value value) {
 	emitBytes(parser, OP_CONSTANT, makeConstant(parser, value));
+}
+
+static void patchJump(Parser* parser, int offset) {
+	// Backpatching; Replace placeholder offsets with real ones.
+	int jump = currentChunk()->count - offset - 2;
+
+	if (jump > UINT16_MAX) {
+		error(parser, "Too much code to jump over.");
+	}
+
+	currentChunk()->code[offset] = (jump >> 8) & 0xff;
+	currentChunk()->code[offset + 1] = jump & 0xff;
 }
 
 static void initCompiler(Compiler* compiler) {
@@ -432,6 +453,17 @@ static void expressionStatement(VM* vm, Parser* parser) {
 	emitByte(parser, OP_POP);
 }
 
+static void ifStatement(VM* vm, Parser* parser) {
+	consume(parser, TOKEN_LEFT_PAREN, "Expect '(' after 'if'.");
+	expression(vm, parser);
+	consume(parser, TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
+
+	int thenJump = emitJump(parser, OP_JUMP_IF_FALSE);
+	statement(vm, parser);
+
+	patchJump(parser, thenJump);
+}
+
 static void printStatement(VM* vm, Parser* parser) {
 	expression(vm, parser);
 	consume(parser, TOKEN_SEMICOLON, "Expect ';' after value.");
@@ -473,6 +505,8 @@ static void declaration(VM* vm, Parser* parser) {
 static void statement(VM* vm, Parser* parser) {
 	if (match(parser, TOKEN_PRINT)) {
 		printStatement(vm, parser);
+	} else if (match(parser, TOKEN_IF)) {
+		ifStatement(vm, parser);
 	} else if (match(parser, TOKEN_LEFT_BRACE)) {
 		beginScope();
 		block(vm, parser);

@@ -185,11 +185,15 @@ static bool identifiersEqual(Token* a, Token* b) {
 	return 0 == memcmp(a->start, b->start, a->length);
 }
 
-static int resolveLocal(Compiler* compiler, Token* name) {
+static int resolveLocal(Parser* parser, Compiler* compiler, Token* name) {
 	// Traverse in reverse for shadowing.
 	for (int i = compiler->localCount - 1; i >= 0; --i) {
 		Local* local = &compiler->locals[i];
 		if (identifiersEqual(name, &local->name)) {
+			if (local->depth == -1) {
+				// The variable is declared but not defined yet. (see addLocal and defineVariable functions)
+				error(parser, "Can't read local variable in its own initializer.");
+			}
 			return i;
 		}
 	}
@@ -204,7 +208,7 @@ static void addLocal(Parser* parser, Token name) {
 
 	Local* local = &current->locals[current->localCount++];
 	local->name = name;
-	local->depth = current->scopeDepth;
+	local->depth = -1; // Variable is declared but not defined yet. Will be initialized in defineVariable().
 }
 
 static void declareVariable(VM* vm, Parser* parser) {
@@ -234,8 +238,13 @@ static uint8_t parseVariable(VM* vm, Parser* parser, const char* errorMessage) {
 	return identifierConstant(vm, parser, &parser->previous);
 }
 
+static void markInitialized() {
+	current->locals[current->localCount - 1].depth = current->scopeDepth;
+}
+
 static void defineVariable(Parser* parser, uint8_t global) {
 	if (current->scopeDepth > 0) {
+		markInitialized();
 		return;
 	}
 
@@ -287,7 +296,7 @@ static void string(VM* vm, Parser* parser, bool canAssign) {
 
 static void namedVariable(VM* vm, Parser* parser, Token name, bool canAssign) {
 	uint8_t getOp, setOp;
-	int arg = resolveLocal(current, &name);
+	int arg = resolveLocal(parser, current, &name);
 	if (arg != -1) {
 		getOp = OP_GET_LOCAL;
 		setOp = OP_SET_LOCAL;

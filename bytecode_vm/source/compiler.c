@@ -49,7 +49,7 @@ typedef struct {
 } Local;
 
 typedef struct {
-	Local locals[UINT8_COUNT];
+	Local locals[UINT8_COUNT]; // #todo: Support more than 256 local variables
 	int localCount;
 	int scopeDepth;
 } Compiler;
@@ -186,6 +186,7 @@ static bool identifiersEqual(Token* a, Token* b) {
 }
 
 static int resolveLocal(Parser* parser, Compiler* compiler, Token* name) {
+	// #todo: Compiler needs to linear search a variable every time. Better way?
 	// Traverse in reverse for shadowing.
 	for (int i = compiler->localCount - 1; i >= 0; --i) {
 		Local* local = &compiler->locals[i];
@@ -294,6 +295,7 @@ static void string(VM* vm, Parser* parser, bool canAssign) {
 	emitConstant(parser, OBJ_VAL(copyString(vm, parser->previous.start + 1, parser->previous.length - 2)));
 }
 
+// #todo: Support const var?
 static void namedVariable(VM* vm, Parser* parser, Token name, bool canAssign) {
 	uint8_t getOp, setOp;
 	int arg = resolveLocal(parser, current, &name);

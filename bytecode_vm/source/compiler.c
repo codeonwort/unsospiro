@@ -459,9 +459,16 @@ static void ifStatement(VM* vm, Parser* parser) {
 	consume(parser, TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
 
 	int thenJump = emitJump(parser, OP_JUMP_IF_FALSE);
+	emitByte(parser, OP_POP);
 	statement(vm, parser);
 
+	int elseJump = emitJump(parser, OP_JUMP);
+
 	patchJump(parser, thenJump);
+	emitByte(parser, OP_POP);
+
+	if (match(parser, TOKEN_ELSE)) statement(vm, parser);
+	patchJump(parser, elseJump);
 }
 
 static void printStatement(VM* vm, Parser* parser) {

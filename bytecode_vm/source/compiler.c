@@ -48,6 +48,7 @@ typedef struct {
 
 // Used in compile() to pass parameters.
 typedef struct {
+	Scanner* scanner;
 	Compiler* compiler;
 	VM* vm;
 	Parser* parser;
@@ -87,32 +88,34 @@ static void error(Parser* parser, const char* message) {
 	errorAt(parser, &(parser->previous), message);
 }
 
-static void advance(Parser* parser) {
+static void advance(Context* ctx) {
+	Parser* parser = ctx->parser;
+
 	parser->previous = parser->current;
 
 	for (;;) {
-		parser->current = scanToken();
+		parser->current = scanToken(ctx->scanner);
 		if (parser->current.type != TOKEN_ERROR) break;
 
 		errorAtCurrent(parser, parser->current.start);
 	}
 }
 
-static void consume(Parser* parser, TokenType type, const char* message) {
-	if (parser->current.type == type) {
-		advance(parser);
+static void consume(Context* ctx, TokenType type, const char* message) {
+	if (ctx->parser->current.type == type) {
+		advance(ctx);
 		return;
 	}
-	errorAtCurrent(parser, message);
+	errorAtCurrent(ctx->parser, message);
 }
 
 static bool check(Parser* parser, TokenType type) {
 	return parser->current.type == type;
 }
 
-static bool match(Parser* parser, TokenType type) {
-	if (!check(parser, type)) return false;
-	advance(parser);
+static bool match(Context* ctx, TokenType type) {
+	if (!check(ctx->parser, type)) return false;
+	advance(ctx);
 	return true;
 }
 
@@ -261,7 +264,7 @@ static void declareVariable(Context* ctx) {
 }
 
 static uint8_t parseVariable(Context* ctx, const char* errorMessage) {
-	consume(ctx->parser, TOKEN_IDENTIFIER, errorMessage);
+	consume(ctx, TOKEN_IDENTIFIER, errorMessage);
 
 	declareVariable(ctx);
 	if (ctx->compiler->scopeDepth > 0) return 0;
@@ -322,7 +325,7 @@ static void literal(Context* ctx, bool canAssign) {
 
 static void grouping(Context* ctx, bool canAssign) {
 	expression(ctx);
-	consume(ctx->parser, TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
+	consume(ctx, TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
 }
 
 static void number(Context* ctx, bool canAssign) {
@@ -360,7 +363,7 @@ static void namedVariable(Context* ctx, Token name, bool canAssign) {
 		setOp = OP_SET_GLOBAL;
 	}
 
-	if (canAssign && match(ctx->parser, TOKEN_EQUAL)) {
+	if (canAssign && match(ctx, TOKEN_EQUAL)) {
 		expression(ctx);
 		emitBytes(ctx, setOp, (uint8_t)arg);
 	} else {
@@ -431,7 +434,7 @@ ParseRule rules[] = {
 static void parsePrecedence(Context* ctx, Precedence precedence) {
 	Parser* parser = ctx->parser;
 
-	advance(parser);
+	advance(ctx);
 	ParseFn prefixRule = getRule(parser->previous.type)->prefix;
 	if (prefixRule == NULL) {
 		error(parser, "Expect expression.");
@@ -442,12 +445,12 @@ static void parsePrecedence(Context* ctx, Precedence precedence) {
 	prefixRule(ctx, canAssign);
 
 	while (precedence <= getRule(parser->current.type)->precedence) {
-		advance(parser);
+		advance(ctx);
 		ParseFn infixRule = getRule(parser->previous.type)->infix;
 		infixRule(ctx, canAssign);
 	}
 
-	if (canAssign && match(parser, TOKEN_EQUAL)) {
+	if (canAssign && match(ctx, TOKEN_EQUAL)) {
 		error(parser, "Invalid assignment target.");
 	}
 }
@@ -466,7 +469,7 @@ static void block(Context* ctx) {
 	while (!check(parser, TOKEN_RIGHT_BRACE) && !check(parser, TOKEN_EOF)) {
 		declaration(ctx);
 	}
-	consume(parser, TOKEN_RIGHT_BRACE, "Expect '}' after block.");
+	consume(ctx, TOKEN_RIGHT_BRACE, "Expect '}' after block.");
 }
 
 static void varDeclaration(Context* ctx) {
@@ -474,28 +477,26 @@ static void varDeclaration(Context* ctx) {
 
 	uint8_t global = parseVariable(ctx, "Expect variable name.");
 
-	if (match(parser, TOKEN_EQUAL)) {
+	if (match(ctx, TOKEN_EQUAL)) {
 		expression(ctx);
 	} else {
 		emitByte(ctx, OP_NIL);
 	}
-	consume(parser, TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
+	consume(ctx, TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
 
 	defineVariable(ctx, global);
 }
 
 static void expressionStatement(Context* ctx) {
 	expression(ctx);
-	consume(ctx->parser, TOKEN_SEMICOLON, "Expect ';' after expression.");
+	consume(ctx, TOKEN_SEMICOLON, "Expect ';' after expression.");
 	emitByte(ctx, OP_POP);
 }
 
 static void ifStatement(Context* ctx) {
-	Parser* parser = ctx->parser;
-
-	consume(parser, TOKEN_LEFT_PAREN, "Expect '(' after 'if'.");
+	consume(ctx, TOKEN_LEFT_PAREN, "Expect '(' after 'if'.");
 	expression(ctx);
-	consume(parser, TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
+	consume(ctx, TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
 
 	int thenJump = emitJump(ctx, OP_JUMP_IF_FALSE);
 	emitByte(ctx, OP_POP);
@@ -506,21 +507,21 @@ static void ifStatement(Context* ctx) {
 	patchJump(ctx, thenJump);
 	emitByte(ctx, OP_POP);
 
-	if (match(parser, TOKEN_ELSE)) statement(ctx);
+	if (match(ctx, TOKEN_ELSE)) statement(ctx);
 	patchJump(ctx, elseJump);
 }
 
 static void printStatement(Context* ctx) {
 	expression(ctx);
-	consume(ctx->parser, TOKEN_SEMICOLON, "Expect ';' after value.");
+	consume(ctx, TOKEN_SEMICOLON, "Expect ';' after value.");
 	emitByte(ctx, OP_PRINT);
 }
 
-static void synchronize(Parser* parser) {
-	parser->panicMode = false;
+static void synchronize(Context* ctx) {
+	ctx->parser->panicMode = false;
 
-	while (parser->current.type != TOKEN_EOF) {
-		switch (parser->current.type) {
+	while (ctx->parser->current.type != TOKEN_EOF) {
+		switch (ctx->parser->current.type) {
 			case TOKEN_CLASS:
 			case TOKEN_FUN:
 			case TOKEN_VAR:
@@ -534,28 +535,26 @@ static void synchronize(Parser* parser) {
 				; // Do nothing
 		}
 
-		advance(parser);
+		advance(ctx);
 	}
 }
 
 static void declaration(Context* ctx) {
-	if (match(ctx->parser, TOKEN_VAR)) {
+	if (match(ctx, TOKEN_VAR)) {
 		varDeclaration(ctx);
 	} else {
 		statement(ctx);
 	}
 
-	if (ctx->parser->panicMode) synchronize(ctx->parser);
+	if (ctx->parser->panicMode) synchronize(ctx);
 }
 
 static void statement(Context* ctx) {
-	Parser* parser = ctx->parser;
-
-	if (match(parser, TOKEN_PRINT)) {
+	if (match(ctx, TOKEN_PRINT)) {
 		printStatement(ctx);
-	} else if (match(parser, TOKEN_IF)) {
+	} else if (match(ctx, TOKEN_IF)) {
 		ifStatement(ctx);
-	} else if (match(parser, TOKEN_LEFT_BRACE)) {
+	} else if (match(ctx, TOKEN_LEFT_BRACE)) {
 		beginScope(ctx->compiler);
 		block(ctx);
 		endScope(ctx);
@@ -570,20 +569,22 @@ bool compile(VM* vm, const char* source, Chunk* chunk) {
 	Compiler compiler;
 	initCompiler(&compiler);
 
+	Scanner scanner;
+	initScanner(&scanner, source);
+
+	parser.hadError = false;
+	parser.panicMode = false;
+
 	Context ctx;
+	ctx.scanner = &scanner;
 	ctx.compiler = &compiler;
 	ctx.vm = vm;
 	ctx.parser = &parser;
 	ctx.currentChunk = chunk;
 
-	initScanner(source);
+	advance(&ctx);
 
-	parser.hadError = false;
-	parser.panicMode = false;
-
-	advance(&parser);
-
-	while (!match(&parser, TOKEN_EOF)) {
+	while (!match(&ctx, TOKEN_EOF)) {
 		declaration(&ctx);
 	}
 

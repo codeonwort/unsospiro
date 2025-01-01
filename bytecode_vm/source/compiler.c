@@ -131,6 +131,16 @@ static void emitBytes(Context* ctx, uint8_t byte1, uint8_t byte2) {
 	emitByte(ctx, byte2);
 }
 
+static void emitLoop(Context* ctx, int loopStart) {
+	emitByte(ctx, OP_LOOP);
+
+	int offset = ctx->currentChunk->count - loopStart + 2;
+	if (offset > UINT16_MAX) error(ctx->parser, "Loop body too large.");
+
+	emitByte(ctx, (offset >> 8) & 0xff);
+	emitByte(ctx, offset & 0xff);
+}
+
 static int emitJump(Context* ctx, uint8_t instruction) {
 	// Backpatching; here, emit jump instruction first with placeholder offsets.
 	// they will be replaced by real offsets after 'then' branch is compiled.
@@ -517,6 +527,21 @@ static void printStatement(Context* ctx) {
 	emitByte(ctx, OP_PRINT);
 }
 
+static void whileStatement(Context* ctx) {
+	int loopStart = ctx->currentChunk->count;
+	consume(ctx, TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
+	expression(ctx);
+	consume(ctx, TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
+
+	int exitJump = emitJump(ctx, OP_JUMP_IF_FALSE);
+	emitByte(ctx, OP_POP);
+	statement(ctx);
+	emitLoop(ctx, loopStart);
+
+	patchJump(ctx, exitJump);
+	emitByte(ctx, OP_POP);
+}
+
 static void synchronize(Context* ctx) {
 	ctx->parser->panicMode = false;
 
@@ -554,6 +579,8 @@ static void statement(Context* ctx) {
 		printStatement(ctx);
 	} else if (match(ctx, TOKEN_IF)) {
 		ifStatement(ctx);
+	} else if (match(ctx, TOKEN_WHILE)) {
+		whileStatement(ctx);
 	} else if (match(ctx, TOKEN_LEFT_BRACE)) {
 		beginScope(ctx->compiler);
 		block(ctx);

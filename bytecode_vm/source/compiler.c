@@ -503,6 +503,51 @@ static void expressionStatement(Context* ctx) {
 	emitByte(ctx, OP_POP);
 }
 
+static void forStatement(Context* ctx) {
+	beginScope(ctx->compiler);
+
+	consume(ctx, TOKEN_LEFT_PAREN, "Expect '(' after 'for'.");
+	if (match(ctx, TOKEN_SEMICOLON)) {
+		// No initializer
+	} else if (match(ctx, TOKEN_VAR)) {
+		varDeclaration(ctx);
+	} else {
+		expressionStatement(ctx);
+	}
+
+	int loopStart = ctx->currentChunk->count;
+	int exitJump = -1;
+	if (!match(ctx, TOKEN_SEMICOLON)) {
+		expression(ctx);
+		consume(ctx, TOKEN_SEMICOLON, "Expect ';' after loop condition.");
+
+		exitJump = emitJump(ctx, OP_JUMP_IF_FALSE); // Exit loop if the condition is false.
+		emitByte(ctx, OP_POP); // The condition
+	}
+
+	if (!match(ctx, TOKEN_RIGHT_PAREN)) {
+		int bodyJump = emitJump(ctx, OP_JUMP);
+		int incrementStart = ctx->currentChunk->count;
+		expression(ctx);
+		emitByte(ctx, OP_POP);
+		consume(ctx, TOKEN_RIGHT_PAREN, "Expect ')' after for clauses.");
+
+		emitLoop(ctx, loopStart);
+		loopStart = incrementStart;
+		patchJump(ctx, bodyJump);
+	}
+
+	statement(ctx);
+	emitLoop(ctx, loopStart);
+
+	if (exitJump != -1) {
+		patchJump(ctx, exitJump);
+		emitByte(ctx, OP_POP);
+	}
+
+	endScope(ctx);
+}
+
 static void ifStatement(Context* ctx) {
 	consume(ctx, TOKEN_LEFT_PAREN, "Expect '(' after 'if'.");
 	expression(ctx);
@@ -577,6 +622,8 @@ static void declaration(Context* ctx) {
 static void statement(Context* ctx) {
 	if (match(ctx, TOKEN_PRINT)) {
 		printStatement(ctx);
+	} else if (match(ctx, TOKEN_FOR)) {
+		forStatement(ctx);
 	} else if (match(ctx, TOKEN_IF)) {
 		ifStatement(ctx);
 	} else if (match(ctx, TOKEN_WHILE)) {

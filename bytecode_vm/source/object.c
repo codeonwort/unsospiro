@@ -19,6 +19,14 @@ static Obj* allocateObject(VM* vm, size_t size, ObjType type) {
 	return object;
 }
 
+ObjFunction* newFunction(VM* vm) {
+	ObjFunction* function = ALLOCATE_OBJ(vm, ObjFunction, OBJ_FUNCTION);
+	function->arity = 0;
+	function->name = NULL;
+	initChunk(&function->chunk);
+	return function;
+}
+
 static ObjString* allocateString(VM* vm, char* chars, int length, uint32_t hash) {
 	ObjString* string = ALLOCATE_OBJ(vm, ObjString, OBJ_STRING);
 	string->length = length;
@@ -61,8 +69,15 @@ ObjString* copyString(VM* vm, const char* chars, int length) {
 	return allocateString(vm, heapChars, length, hash);
 }
 
+static void printFunction(ObjFunction* function) {
+	printf("<fn %s>", function->name->chars);
+}
+
 void printObject(Value value) {
 	switch (OBJ_TYPE(value)) {
+		case OBJ_FUNCTION:
+			printFunction(AS_FUNCTION(value));
+			break;
 		case OBJ_STRING:
 			printf("%s", AS_CSTRING(value));
 			break;

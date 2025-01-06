@@ -1,15 +1,24 @@
 #pragma once
 
 #include "chunk.h"
+#include "object.h"
 #include "table.h"
 #include "value.h"
 
 // #todo: Temp stack size
-#define STACK_MAX 256
+#define FRAMES_MAX 64
+#define STACK_MAX (FRAMES_MAX * UINT8_COUNT)
 
 typedef struct {
-	Chunk* chunk;
+	ObjFunction* function;
 	uint8_t* ip; // instruction pointer (or program counter) to next instruction to be executed
+	Value* slots;
+} CallFrame;
+
+typedef struct VM_t {
+	CallFrame frames[FRAMES_MAX];
+	int frameCount;
+
 	Value stack[STACK_MAX];
 	Value* stackTop; // location where in next value will be pushed
 	Table globals; // Store global variables

@@ -40,7 +40,15 @@ typedef struct {
 	int depth; // 0 = global scope, 1 = top level block, ...
 } Local;
 
+typedef enum {
+	TYPE_FUNCTION,
+	TYPE_SCRIPT
+} FunctionType;
+
 typedef struct {
+	ObjFunction* function;
+	FunctionType type;
+
 	Local locals[UINT8_COUNT]; // #todo: Support more than 256 local variables
 	int localCount;
 	int scopeDepth;
@@ -182,18 +190,28 @@ static void patchJump(Context* ctx, int offset) {
 	currentChunk->code[offset + 1] = jump & 0xff;
 }
 
-static void initCompiler(Compiler* compiler) {
+static void initCompiler(VM* vm, Compiler* compiler, FunctionType type) {
+	compiler->function = newFunction(vm);
+	compiler->type = type;
 	compiler->localCount = 0;
 	compiler->scopeDepth = 0;
+
+	// Reserve slot 0 for VM.
+	Local* local = &(compiler->locals[compiler->localCount++]);
+	local->depth = 0;
+	local->name.start = "";
+	local->name.length = 0;
 }
 
-static void endCompiler(Context* ctx) {
+static ObjFunction* endCompiler(Context* ctx) {
 	emitReturn(ctx);
+	ObjFunction* function = ctx->compiler->function;
 #if DEBUG_PRINT_CODE
 	if (!ctx->parser->hadError) {
-		disassembleChunk(ctx->currentChunk, "code");
+		disassembleChunk(ctx->currentChunk, function->name != NULL ? function->name->chars : "<script>");
 	}
 #endif
+	return function;
 }
 
 static void beginScope(Compiler* compiler) {
@@ -637,11 +655,11 @@ static void statement(Context* ctx) {
 	}
 }
 
-bool compile(VM* vm, const char* source, Chunk* chunk) {
+ObjFunction* compile(VM* vm, const char* source) {
 	Parser parser;
 
 	Compiler compiler;
-	initCompiler(&compiler);
+	initCompiler(vm, &compiler, TYPE_SCRIPT);
 
 	Scanner scanner;
 	initScanner(&scanner, source);
@@ -654,7 +672,7 @@ bool compile(VM* vm, const char* source, Chunk* chunk) {
 	ctx.compiler = &compiler;
 	ctx.vm = vm;
 	ctx.parser = &parser;
-	ctx.currentChunk = chunk;
+	ctx.currentChunk = &(compiler.function->chunk);
 
 	advance(&ctx);
 
@@ -664,5 +682,6 @@ bool compile(VM* vm, const char* source, Chunk* chunk) {
 
 	endCompiler(&ctx);
 
-	return !parser.hadError;
+	ObjFunction* function = endCompiler(&ctx);
+	return parser.hadError ? NULL : function;
 }

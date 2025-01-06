@@ -3,7 +3,8 @@
 #include "common.h"
 #include "chunk.h"
 #include "value.h"
-#include "vm.h" // #todo: Replace with forward decl of VM?
+
+typedef struct VM_t VM;
 
 #define OBJ_TYPE(value)        (AS_OBJ(value)->type)
 

@@ -1,4 +1,6 @@
 #include "memory.h"
+#include "vm.h"
+
 #include <stdlib.h>
 
 static void freeObject(Obj* object) {

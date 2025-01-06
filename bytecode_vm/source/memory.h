@@ -3,6 +3,8 @@
 #include "common.h"
 #include "object.h"
 
+typedef struct VM_t VM;
+
 #define ALLOCATE(type, count) \
 	(type*)reallocate(NULL, 0, sizeof(type) * (count))
 

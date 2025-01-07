@@ -45,7 +45,8 @@ typedef enum {
 	TYPE_SCRIPT
 } FunctionType;
 
-typedef struct {
+typedef struct Compiler {
+	struct Compiler* enclosing;
 	ObjFunction* function;
 	FunctionType type;
 
@@ -190,11 +191,19 @@ static void patchJump(Context* ctx, int offset) {
 	currentChunk->code[offset + 1] = jump & 0xff;
 }
 
-static void initCompiler(VM* vm, Compiler* compiler, FunctionType type) {
-	compiler->function = newFunction(vm);
+static void initCompiler(Context* ctx, Compiler* compiler, FunctionType type) {
+	compiler->enclosing = ctx->compiler;
+	compiler->function = newFunction(ctx->vm);
 	compiler->type = type;
 	compiler->localCount = 0;
 	compiler->scopeDepth = 0;
+
+	ctx->compiler = compiler;
+
+	if (type != TYPE_SCRIPT) {
+		// This function object will live longer than the source code so copy the string.
+		compiler->function->name = copyString(ctx->vm, ctx->parser->previous.start, ctx->parser->previous.length);
+	}
 
 	// Reserve slot 0 for VM.
 	Local* local = &(compiler->locals[compiler->localCount++]);
@@ -211,6 +220,7 @@ static ObjFunction* endCompiler(Context* ctx) {
 		disassembleChunk(ctx->currentChunk, function->name != NULL ? function->name->chars : "<script>");
 	}
 #endif
+	ctx->compiler = ctx->compiler->enclosing;
 	return function;
 }
 
@@ -301,6 +311,7 @@ static uint8_t parseVariable(Context* ctx, const char* errorMessage) {
 }
 
 static void markInitialized(Compiler* compiler) {
+	if (compiler->scopeDepth == 0) return;
 	compiler->locals[compiler->localCount - 1].depth = compiler->scopeDepth;
 }
 
@@ -500,6 +511,37 @@ static void block(Context* ctx) {
 	consume(ctx, TOKEN_RIGHT_BRACE, "Expect '}' after block.");
 }
 
+static void function(Context* ctx, FunctionType type) {
+	Compiler compiler;
+	initCompiler(ctx, &compiler, type);
+	beginScope(&compiler);
+
+	consume(ctx, TOKEN_LEFT_PAREN, "Expect '(' after function name.");
+	if (!check(ctx->parser, TOKEN_RIGHT_PAREN)) {
+		do {
+			ctx->compiler->function->arity++;
+			if (ctx->compiler->function->arity > 255) {
+				errorAtCurrent(ctx->parser, "Can't have more than 255 parameters.");
+			}
+			uint8_t constant = parseVariable(ctx, "Expect parameter name.");
+			defineVariable(ctx, constant);
+		} while (match(ctx, TOKEN_COMMA));
+	}
+	consume(ctx, TOKEN_RIGHT_PAREN, "Expect ')' after parameters.");
+	consume(ctx, TOKEN_LEFT_BRACE, "Expect '{' before function body.");
+	block(ctx);
+
+	ObjFunction* fun = endCompiler(ctx);
+	emitBytes(ctx, OP_CONSTANT, makeConstant(ctx, OBJ_VAL(fun)));
+}
+
+static void funDeclaration(Context* ctx) {
+	uint8_t global = parseVariable(ctx, "Expect function name.");
+	markInitialized(ctx->compiler);
+	function(ctx, TYPE_FUNCTION);
+	defineVariable(ctx, global);
+}
+
 static void varDeclaration(Context* ctx) {
 	Parser* parser = ctx->parser;
 
@@ -628,7 +670,9 @@ static void synchronize(Context* ctx) {
 }
 
 static void declaration(Context* ctx) {
-	if (match(ctx, TOKEN_VAR)) {
+	if (match(ctx, TOKEN_FUN)) {
+		funDeclaration(ctx);
+	} else if (match(ctx, TOKEN_VAR)) {
 		varDeclaration(ctx);
 	} else {
 		statement(ctx);
@@ -658,9 +702,6 @@ static void statement(Context* ctx) {
 ObjFunction* compile(VM* vm, const char* source) {
 	Parser parser;
 
-	Compiler compiler;
-	initCompiler(vm, &compiler, TYPE_SCRIPT);
-
 	Scanner scanner;
 	initScanner(&scanner, source);
 
@@ -669,9 +710,13 @@ ObjFunction* compile(VM* vm, const char* source) {
 
 	Context ctx;
 	ctx.scanner = &scanner;
-	ctx.compiler = &compiler;
 	ctx.vm = vm;
 	ctx.parser = &parser;
+	// A little trick to initialize ctx.compiler
+	// 1. Initialize later than ctx.vm
+	ctx.compiler = NULL; // 2. This null will be assigned to ctx->compiler->enclosing immediately
+	Compiler compiler; // 3. This object will be assigned to ctx->compiler immediately
+	initCompiler(&ctx, &compiler, TYPE_SCRIPT);
 	ctx.currentChunk = &(compiler.function->chunk);
 
 	advance(&ctx);
@@ -679,8 +724,6 @@ ObjFunction* compile(VM* vm, const char* source) {
 	while (!match(&ctx, TOKEN_EOF)) {
 		declaration(&ctx);
 	}
-
-	endCompiler(&ctx);
 
 	ObjFunction* function = endCompiler(&ctx);
 	return parser.hadError ? NULL : function;

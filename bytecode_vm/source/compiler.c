@@ -160,6 +160,7 @@ static int emitJump(Context* ctx, uint8_t instruction) {
 }
 
 static void emitReturn(Context* ctx) {
+	emitByte(ctx, OP_NIL); // If a function ends, it returns nil implicitly.
 	emitByte(ctx, OP_RETURN);
 }
 
@@ -199,6 +200,7 @@ static void initCompiler(Context* ctx, Compiler* compiler, FunctionType type) {
 	compiler->scopeDepth = 0;
 
 	ctx->compiler = compiler;
+	ctx->currentChunk = &(compiler->function->chunk);
 
 	if (type != TYPE_SCRIPT) {
 		// This function object will live longer than the source code so copy the string.
@@ -221,6 +223,9 @@ static ObjFunction* endCompiler(Context* ctx) {
 	}
 #endif
 	ctx->compiler = ctx->compiler->enclosing;
+	if (ctx->compiler != NULL) {
+		ctx->currentChunk = &(ctx->compiler->function->chunk);
+	}
 	return function;
 }
 
@@ -324,6 +329,21 @@ static void defineVariable(Context* ctx, uint8_t global) {
 	emitBytes(ctx, OP_DEFINE_GLOBAL, global);
 }
 
+static uint8_t argumentList(Context* ctx) {
+	uint8_t argCount = 0;
+	if (!check(ctx->parser, TOKEN_RIGHT_PAREN)) {
+		do {
+			expression(ctx);
+			if (argCount >= 255) {
+				error(ctx->parser, "Can't have more than 255 arguments.");
+			}
+			argCount++;
+		} while (match(ctx, TOKEN_COMMA));
+	}
+	consume(ctx, TOKEN_RIGHT_PAREN, "Expect ')' after arguments.");
+	return argCount;
+}
+
 static void and_(Context* ctx, bool canAssign) {
 	int endJump = emitJump(ctx, OP_JUMP_IF_FALSE);
 
@@ -351,6 +371,11 @@ static void binary(Context* ctx, bool canAssign) {
 		case TOKEN_SLASH: emitByte(ctx, OP_DIVIDE); break;
 		default: return;
 	}
+}
+
+static void call(Context* ctx, bool canAssign) {
+	uint8_t argCount = argumentList(ctx);
+	emitBytes(ctx, OP_CALL, argCount);
 }
 
 static void literal(Context* ctx, bool canAssign) {
@@ -428,7 +453,7 @@ static void unary(Context* ctx, bool canAssign) {
 }
 
 ParseRule rules[] = {
-	[TOKEN_LEFT_PAREN]    = {grouping, NULL,   PREC_NONE},
+	[TOKEN_LEFT_PAREN]    = {grouping, call,   PREC_CALL},
 	[TOKEN_RIGHT_PAREN]   = {NULL,     NULL,   PREC_NONE},
 	[TOKEN_LEFT_BRACE]    = {NULL,     NULL,   PREC_NONE},
 	[TOKEN_RIGHT_BRACE]   = {NULL,     NULL,   PREC_NONE},
@@ -717,7 +742,7 @@ ObjFunction* compile(VM* vm, const char* source) {
 	ctx.compiler = NULL; // 2. This null will be assigned to ctx->compiler->enclosing immediately
 	Compiler compiler; // 3. This object will be assigned to ctx->compiler immediately
 	initCompiler(&ctx, &compiler, TYPE_SCRIPT);
-	ctx.currentChunk = &(compiler.function->chunk);
+	// ctx.currentChunk is also initialized in initCompiler().
 
 	advance(&ctx);
 

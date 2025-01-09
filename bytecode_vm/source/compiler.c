@@ -657,6 +657,20 @@ static void printStatement(Context* ctx) {
 	emitByte(ctx, OP_PRINT);
 }
 
+static void returnStatement(Context* ctx) {
+	if (ctx->compiler->type == TYPE_SCRIPT) {
+		error(ctx->parser, "Can't return from top-level code.");
+	}
+
+	if (match(ctx, TOKEN_SEMICOLON)) {
+		emitReturn(ctx);
+	} else {
+		expression(ctx);
+		consume(ctx, TOKEN_SEMICOLON, "Expect ';' after return value.");
+		emitByte(ctx, OP_RETURN);
+	}
+}
+
 static void whileStatement(Context* ctx) {
 	int loopStart = ctx->currentChunk->count;
 	consume(ctx, TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
@@ -713,6 +727,8 @@ static void statement(Context* ctx) {
 		forStatement(ctx);
 	} else if (match(ctx, TOKEN_IF)) {
 		ifStatement(ctx);
+	} else if (match(ctx, TOKEN_RETURN)) {
+		returnStatement(ctx);
 	} else if (match(ctx, TOKEN_WHILE)) {
 		whileStatement(ctx);
 	} else if (match(ctx, TOKEN_LEFT_BRACE)) {

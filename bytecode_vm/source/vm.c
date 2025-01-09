@@ -8,6 +8,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 static void resetStack(VM* vm) {
 	vm->stackTop = vm->stack;
@@ -37,6 +38,15 @@ static void runtimeError(VM* vm, const char* format, ...) {
 	resetStack(vm);
 }
 
+static void defineNative(VM* vm, const char* name, NativeFn function) {
+	// Push name and function to the stack to prevent from being GC'd.
+	push(vm, OBJ_VAL(copyString(vm, name, (int)strlen(name))));
+	push(vm, OBJ_VAL(newNative(vm, function)));
+	tableSet(&(vm->globals), AS_STRING(vm->stack[0]), vm->stack[1]);
+	pop(vm);
+	pop(vm);
+}
+
 static Value peek(VM* vm, int distance) {
 	return vm->stackTop[-1 - distance];
 }
@@ -62,6 +72,15 @@ static bool callValue(VM* vm, Value callee, int argCount) {
 		switch (OBJ_TYPE(callee)) {
 			case OBJ_FUNCTION:
 				return call(vm, AS_FUNCTION(callee), argCount);
+			case OBJ_NATIVE: {
+				NativeFn native = AS_NATIVE(callee);
+				// #todo: Check arity
+				// #todo: Throw runtime error if any
+				Value result = native(argCount, vm->stackTop - argCount);
+				vm->stackTop -= argCount + 1;
+				push(vm, result);
+				return true;
+			}
 			default:
 				break; // Not callable object type
 		}
@@ -69,7 +88,6 @@ static bool callValue(VM* vm, Value callee, int argCount) {
 	runtimeError(vm, "Can only call functions and classes.");
 	return false;
 }
-
 
 static bool isFalsey(Value value) {
 	// #todo: Number 0 is falsey
@@ -260,11 +278,17 @@ static InterpretResult run(VM* vm) {
 #undef BINARY_OP
 }
 
+static Value clockNative(int argCount, Value* args) {
+	return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
+}
+
 void initVM(VM* vm) {
 	resetStack(vm);
 	vm->objects = NULL;
 	initTable(&vm->globals);
 	initTable(&vm->strings);
+
+	defineNative(vm, "clock", clockNative);
 }
 
 void freeVM(VM* vm) {

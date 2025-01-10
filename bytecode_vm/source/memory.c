@@ -5,6 +5,13 @@
 
 static void freeObject(Obj* object) {
 	switch (object->type) {
+		case OBJ_CLOSURE: {
+			// A closure does not own its function, so does not free it.
+			// To free a function, all references to it should be gone first.
+			// That's hard to track, so GC will handle it.
+			FREE(ObjClosure, object);
+			break;
+		}
 		case OBJ_FUNCTION: {
 			ObjFunction* function = (ObjFunction*)object;
 			freeChunk(&function->chunk);

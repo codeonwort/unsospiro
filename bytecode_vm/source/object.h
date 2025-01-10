@@ -8,16 +8,24 @@ typedef struct VM_t VM;
 
 #define OBJ_TYPE(value)        (AS_OBJ(value)->type)
 
+#define IS_CLOSURE(value)      isObjType(value, OBJ_CLOSURE)
 #define IS_FUNCTION(value)     isObjType(value, OBJ_FUNCTION)
 #define IS_NATIVE(value)       isObjType(value, OBJ_NATIVE)
 #define IS_STRING(value)       isObjType(value, OBJ_STRING)
 
+#define AS_CLOSURE(value)      ((ObjClosure*)AS_OBJ(value))
 #define AS_FUNCTION(value)     ((ObjFunction*)AS_OBJ(value))
 #define AS_NATIVE(value)       (((ObjNative*)AS_OBJ(value))->function)
 #define AS_STRING(value)       ((ObjString*)AS_OBJ(value))
 #define AS_CSTRING(value)      (((ObjString*)AS_OBJ(value))->chars)
 
+// For each enum:
+// - Declare IS_XXX() and AS_XXX() macros in object.h
+// - Declare newXXX() in object.h
+// - Modify printObject() in object.c
+// - Modify freeObject() in memory.c
 typedef enum {
+	OBJ_CLOSURE,
 	OBJ_FUNCTION,
 	OBJ_NATIVE,
 	OBJ_STRING,
@@ -51,6 +59,12 @@ struct ObjString {
 	uint32_t hash;
 };
 
+typedef struct {
+	Obj obj;
+	ObjFunction* function;
+} ObjClosure;
+
+ObjClosure* newClosure(VM* vm, ObjFunction* function);
 ObjFunction* newFunction(VM* vm);
 ObjNative* newNative(VM* vm, NativeFn function);
 ObjString* takeString(VM* vm, char* chars, int length);

@@ -557,7 +557,7 @@ static void function(Context* ctx, FunctionType type) {
 	block(ctx);
 
 	ObjFunction* fun = endCompiler(ctx);
-	emitBytes(ctx, OP_CONSTANT, makeConstant(ctx, OBJ_VAL(fun)));
+	emitBytes(ctx, OP_CLOSURE, makeConstant(ctx, OBJ_VAL(fun)));
 }
 
 static void funDeclaration(Context* ctx) {

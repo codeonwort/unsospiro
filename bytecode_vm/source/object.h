@@ -45,7 +45,7 @@ typedef struct {
 } ObjFunction;
 
 // Native functions have side effect and represented in different way than ObjFunction.
-typedef Value(*NativeFn)(int argCount, Value* args);
+typedef Value(*NativeFn)(VM* vm, int argCount, Value* args);
 
 typedef struct {
 	Obj obj;
@@ -68,6 +68,7 @@ ObjClosure* newClosure(VM* vm, ObjFunction* function);
 ObjFunction* newFunction(VM* vm);
 ObjNative* newNative(VM* vm, NativeFn function);
 ObjString* takeString(VM* vm, char* chars, int length);
+// length does not include the terminating null.
 ObjString* copyString(VM* vm, const char* chars, int length);
 void printObject(Value value);
 

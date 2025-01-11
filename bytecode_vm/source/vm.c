@@ -8,7 +8,9 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+// For native functions
 #include <time.h>
+#include <stdlib.h>
 
 static void resetStack(VM* vm) {
 	vm->stackTop = vm->stack;
@@ -76,10 +78,16 @@ static bool callValue(VM* vm, Value callee, int argCount) {
 				NativeFn native = AS_NATIVE(callee);
 				// #todo: Check arity
 				// #todo: Throw runtime error if any
-				Value result = native(argCount, vm->stackTop - argCount);
-				vm->stackTop -= argCount + 1;
-				push(vm, result);
-				return true;
+				Value result = native(vm, argCount, vm->stackTop - argCount);
+				// #todo: How do I determine if a native function called runtimeError()?
+				// runtimeError() invokes resetStack() so let's check vm->frameCount for now.
+				if (vm->frameCount == 0) {
+					return false;
+				} else {
+					vm->stackTop -= argCount + 1;
+					push(vm, result);
+					return true;
+				}
 			}
 			default:
 				break; // Not callable object type
@@ -284,8 +292,60 @@ static InterpretResult run(VM* vm) {
 #undef BINARY_OP
 }
 
-static Value clockNative(int argCount, Value* args) {
+static Value clockNative(VM* vm, int argCount, Value* args) {
 	return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
+}
+
+static Value readFileNative(VM* vm, int argCount, Value* args) {
+	if (argCount != 1) {
+		runtimeError(vm, "[readFileNative] Invalid number of arguments: 1 was expected, but %d was given", argCount);
+		return NIL_VAL;
+	}
+	if (IS_STRING(args[0]) == false) {
+		runtimeError(vm, "[readFileNative] The argument is not a string", argCount);
+		return NIL_VAL;
+	}
+
+	char* filepath = AS_CSTRING(args[0]);
+	FILE* fp;
+	fopen_s(&fp, filepath, "rb");
+	if (!fp) {
+		runtimeError(vm, "[readFileNative] Failed to open file: %s", filepath);
+		return NIL_VAL;
+	}
+
+	fseek(fp, 0, SEEK_END);
+	size_t fsize = ftell(fp);
+	rewind(fp);
+
+	if (fsize > INT_MAX) {
+		runtimeError(vm, "[readFileNative] File is too big: %s (%llu bytes)", filepath, fsize);
+		fclose(fp);
+		return NIL_VAL;
+	}
+	
+	char* contents = malloc(fsize + 1);
+	if (contents == NULL) {
+		runtimeError(vm, "[readFileNative] Out of memory while reading file: %s", filepath);
+		fclose(fp);
+		return NIL_VAL;
+	}
+
+	size_t bytesRead = fread(contents, sizeof(char), fsize, fp);
+	if (bytesRead < fsize) {
+		runtimeError(vm, "[readFileNative] Failed to read file: %s", filepath);
+		fclose(fp);
+		free(contents);
+		return NIL_VAL;
+	}
+	contents[fsize] = '\0';
+
+	// #todo-native: 1) Redundant malloc. 2) VM needs to hash the string.
+	ObjString* string = copyString(vm, contents, (int)fsize);
+	fclose(fp);
+	free(contents);
+
+	return OBJ_VAL(string);
 }
 
 void initVM(VM* vm) {
@@ -295,6 +355,7 @@ void initVM(VM* vm) {
 	initTable(&vm->strings);
 
 	defineNative(vm, "clock", clockNative);
+	defineNative(vm, "readFile", readFileNative);
 }
 
 void freeVM(VM* vm) {

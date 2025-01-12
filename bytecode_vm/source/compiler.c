@@ -40,6 +40,11 @@ typedef struct {
 	int depth; // 0 = global scope, 1 = top level block, ...
 } Local;
 
+typedef struct {
+	uint8_t index;
+	bool isLocal;
+} Upvalue;
+
 typedef enum {
 	TYPE_FUNCTION,
 	TYPE_SCRIPT
@@ -52,6 +57,7 @@ typedef struct Compiler {
 
 	Local locals[UINT8_COUNT]; // #todo: Support more than 256 local variables
 	int localCount;
+	Upvalue upvalues[UINT8_COUNT];
 	int scopeDepth;
 } Compiler;
 
@@ -276,6 +282,42 @@ static int resolveLocal(Parser* parser, Compiler* compiler, Token* name) {
 	return -1;
 }
 
+static int addUpvalue(Parser* parser, Compiler* compiler, uint8_t index, bool isLocal) {
+	int upvalueCount = compiler->function->upvalueCount;
+
+	for (int i = 0; i < upvalueCount; ++i) {
+		Upvalue* upvalue = &(compiler->upvalues[i]);
+		if (upvalue->index == index && upvalue->isLocal == isLocal) {
+			return i;
+		}
+	}
+	if (upvalueCount == UINT8_COUNT) {
+		error(parser, "Too many closure variables in function.");
+		return 0;
+	}
+
+	compiler->upvalues[upvalueCount].isLocal = isLocal;
+	compiler->upvalues[upvalueCount].index = index;
+	return compiler->function->upvalueCount++;
+}
+
+static int resolveUpvalue(Parser* parser, Compiler* compiler, Token* name) {
+	if (compiler->enclosing == NULL) return -1;
+
+	int local = resolveLocal(parser, compiler->enclosing, name);
+	if (local != -1) {
+		return addUpvalue(parser, compiler, (uint8_t)local, true);
+	}
+
+	int upvalue = resolveUpvalue(parser, compiler->enclosing, name);
+	if (upvalue != -1) {
+		return addUpvalue(parser, compiler, (uint8_t)upvalue, false);
+	}
+
+	// Global variable (or undefined variable, but Runtime don't know if so)
+	return -1;
+}
+
 static void addLocal(Context* ctx, Token name) {
 	if (ctx->compiler->localCount == UINT8_COUNT) {
 		error(ctx->parser, "Too many local variables in function.");
@@ -421,6 +463,9 @@ static void namedVariable(Context* ctx, Token name, bool canAssign) {
 	if (arg != -1) {
 		getOp = OP_GET_LOCAL;
 		setOp = OP_SET_LOCAL;
+	} else if ((arg = resolveUpvalue(ctx->parser, ctx->compiler, &name)) != -1) {
+		getOp = OP_GET_UPVALUE;
+		setOp = OP_SET_UPVALUE;
 	} else {
 		arg = identifierConstant(ctx, &name);
 		getOp = OP_GET_GLOBAL;
@@ -558,6 +603,11 @@ static void function(Context* ctx, FunctionType type) {
 
 	ObjFunction* fun = endCompiler(ctx);
 	emitBytes(ctx, OP_CLOSURE, makeConstant(ctx, OBJ_VAL(fun)));
+
+	for (int i = 0; i < fun->upvalueCount; ++i) {
+		emitByte(ctx, compiler.upvalues[i].isLocal ? 1 : 0);
+		emitByte(ctx, compiler.upvalues[i].index);
+	}
 }
 
 static void funDeclaration(Context* ctx) {

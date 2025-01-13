@@ -20,8 +20,15 @@ static Obj* allocateObject(VM* vm, size_t size, ObjType type) {
 }
 
 ObjClosure* newClosure(VM* vm, ObjFunction* function) {
+	ObjUpvalue** upvalues = ALLOCATE(ObjUpvalue*, function->upvalueCount);
+	for (int i = 0; i < function->upvalueCount; ++i) {
+		upvalues[i] = NULL;
+	}
+
 	ObjClosure* closure = ALLOCATE_OBJ(vm, ObjClosure, OBJ_CLOSURE);
 	closure->function = function;
+	closure->upvalues = upvalues;
+	closure->upvalueCount = function->upvalueCount;
 	return closure;
 }
 
@@ -82,6 +89,12 @@ ObjString* copyString(VM* vm, const char* chars, int length) {
 	return allocateString(vm, heapChars, length, hash);
 }
 
+ObjUpvalue* newUpvalue(VM* vm, Value* slot) {
+	ObjUpvalue* upvalue = ALLOCATE_OBJ(vm, ObjUpvalue, OBJ_UPVALUE);
+	upvalue->location = slot;
+	return upvalue;
+}
+
 static void printFunction(ObjFunction* function) {
 	if (function->name == NULL) {
 		printf("<script>");
@@ -103,6 +116,10 @@ void printObject(Value value) {
 			break;
 		case OBJ_STRING:
 			printf_s("%s", AS_CSTRING(value));
+			break;
+		case OBJ_UPVALUE:
+			// Upvalue is not a first class value that users can access.
+			printf("upvalue");
 			break;
 	}
 }

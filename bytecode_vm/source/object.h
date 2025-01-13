@@ -29,6 +29,7 @@ typedef enum {
 	OBJ_FUNCTION,
 	OBJ_NATIVE,
 	OBJ_STRING,
+	OBJ_UPVALUE,
 } ObjType;
 
 struct Obj {
@@ -60,9 +61,20 @@ struct ObjString {
 	uint32_t hash;
 };
 
+// Runtime representation of an upvalue.
+typedef struct ObjUpvalue {
+	Obj obj;
+	// It's a pointer to a Value, so assigning something to a variable
+	// captured by an upvalue actually assigns it to the real variable, not a copy of it.
+	Value* location;
+} ObjUpvalue;
+
 typedef struct {
 	Obj obj;
 	ObjFunction* function;
+	ObjUpvalue** upvalues;
+	// ObjFunction also holds upvalueCount, but it's duplicated here for GC.
+	int upvalueCount;
 } ObjClosure;
 
 ObjClosure* newClosure(VM* vm, ObjFunction* function);
@@ -71,6 +83,7 @@ ObjNative* newNative(VM* vm, NativeFn function);
 ObjString* takeString(VM* vm, char* chars, int length);
 // length does not include the terminating null.
 ObjString* copyString(VM* vm, const char* chars, int length);
+ObjUpvalue* newUpvalue(VM* vm, Value* slot);
 void printObject(Value value);
 
 // Should not be a macro, if so 'value' will be evaluated twice.

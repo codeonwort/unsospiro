@@ -9,6 +9,8 @@ static void freeObject(Obj* object) {
 			// A closure does not own its function, so does not free it.
 			// To free a function, all references to it should be gone first.
 			// That's hard to track, so GC will handle it.
+			ObjClosure* closure = (ObjClosure*)object;
+			FREE_ARRAY(ObjUpvalue*, closure->upvalues, closure->upvalueCount);
 			FREE(ObjClosure, object);
 			break;
 		}
@@ -26,6 +28,12 @@ static void freeObject(Obj* object) {
 			ObjString* string = (ObjString*)object;
 			FREE_ARRAY(char, string->chars, string->length + 1);
 			FREE(ObjString, object);
+			break;
+		}
+		case OBJ_UPVALUE: {
+			// Multiple closure might close over the same variable,
+			// so ObjUpvalue does not own the variable it refers to.
+			FREE(ObjUpvalue, object);
 			break;
 		}
 	}

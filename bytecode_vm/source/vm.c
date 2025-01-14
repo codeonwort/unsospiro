@@ -15,6 +15,7 @@
 static void resetStack(VM* vm) {
 	vm->stackTop = vm->stack;
 	vm->frameCount = 0;
+	vm->openUpvalues = NULL;
 }
 
 static void runtimeError(VM* vm, const char* format, ...) {
@@ -98,8 +99,36 @@ static bool callValue(VM* vm, Value callee, int argCount) {
 }
 
 static ObjUpvalue* captureUpvalue(VM* vm, Value* local) {
+	ObjUpvalue* prevUpvalue = NULL;
+	ObjUpvalue* upvalue = vm->openUpvalues;
+	while (upvalue != NULL && upvalue->location > local) {
+		prevUpvalue = upvalue;
+		upvalue = upvalue->next;
+	}
+
+	if (upvalue != NULL && upvalue->location == local) {
+		return upvalue;
+	}
+
 	ObjUpvalue* createdUpvalue = newUpvalue(vm, local);
+	createdUpvalue->next = upvalue;
+
+	if (prevUpvalue == NULL) {
+		vm->openUpvalues = createdUpvalue;
+	} else {
+		prevUpvalue->next = createdUpvalue;
+	}
+
 	return createdUpvalue;
+}
+
+static void closeUpvalues(VM* vm, Value* last) {
+	while (vm->openUpvalues != NULL && vm->openUpvalues->location >= last) {
+		ObjUpvalue* upvalue = vm->openUpvalues;
+		upvalue->closed = *(upvalue->location);
+		upvalue->location = &(upvalue->closed);
+		vm->openUpvalues = upvalue->next;
+	}
 }
 
 static bool isFalsey(Value value) {
@@ -294,8 +323,14 @@ static InterpretResult run(VM* vm) {
 				}
 				break;
 			}
+			case OP_CLOSE_UPVALUE: {
+				closeUpvalues(vm, vm->stackTop - 1);
+				pop(vm);
+				break;
+			}
 			case OP_RETURN: {
 				Value result = pop(vm);
+				closeUpvalues(vm, frame->slots);
 				vm->frameCount--;
 				if (vm->frameCount == 0) {
 					pop(vm);

@@ -38,6 +38,7 @@ typedef enum {
 typedef struct {
 	Token name;
 	int depth; // 0 = global scope, 1 = top level block, ...
+	bool isCaptured; // Captured by a closure
 } Local;
 
 typedef struct {
@@ -216,6 +217,7 @@ static void initCompiler(Context* ctx, Compiler* compiler, FunctionType type) {
 	// Reserve slot 0 for VM.
 	Local* local = &(compiler->locals[compiler->localCount++]);
 	local->depth = 0;
+	local->isCaptured = false;
 	local->name.start = "";
 	local->name.length = 0;
 }
@@ -246,7 +248,11 @@ static void endScope(Context* ctx) {
 	current->scopeDepth--;
 
 	while (current->localCount > 0 && current->locals[current->localCount - 1].depth > current->scopeDepth) {
-		emitByte(ctx, OP_POP);
+		if (current->locals[current->localCount - 1].isCaptured) {
+			emitByte(ctx, OP_CLOSE_UPVALUE);
+		} else {
+			emitByte(ctx, OP_POP);
+		}
 		current->localCount--;
 	}
 }
@@ -306,6 +312,7 @@ static int resolveUpvalue(Parser* parser, Compiler* compiler, Token* name) {
 
 	int local = resolveLocal(parser, compiler->enclosing, name);
 	if (local != -1) {
+		compiler->enclosing->locals[local].isCaptured = true;
 		return addUpvalue(parser, compiler, (uint8_t)local, true);
 	}
 
@@ -327,6 +334,7 @@ static void addLocal(Context* ctx, Token name) {
 	Local* local = &ctx->compiler->locals[ctx->compiler->localCount++];
 	local->name = name;
 	local->depth = -1; // Variable is declared but not defined yet. Will be initialized in defineVariable().
+	local->isCaptured = false;
 }
 
 static void declareVariable(Context* ctx) {

@@ -67,6 +67,8 @@ typedef struct ObjUpvalue {
 	// It's a pointer to a Value, so assigning something to a variable
 	// captured by an upvalue actually assigns it to the real variable, not a copy of it.
 	Value* location;
+	Value closed;
+	struct ObjUpvalue* next;
 } ObjUpvalue;
 
 typedef struct {

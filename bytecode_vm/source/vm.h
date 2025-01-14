@@ -23,6 +23,7 @@ typedef struct VM_t {
 	Value* stackTop; // location where in next value will be pushed
 	Table globals; // Store global variables
 	Table strings; // Store all strings in a hash table for string interning
+	ObjUpvalue* openUpvalues;
 	Obj* objects;
 } VM;
 

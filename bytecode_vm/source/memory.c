@@ -1,6 +1,12 @@
 #include "memory.h"
 #include "vm.h"
 
+#if DEBUG_LOG_GC
+#include "debug.h"
+#include <stdio.h>
+#endif
+
+
 #include <stdlib.h>
 
 static void freeObject(Obj* object) {
@@ -40,6 +46,12 @@ static void freeObject(Obj* object) {
 }
 
 void* reallocate(void* pointer, size_t oldSize, size_t newSize) {
+	if (newSize > oldSize) {
+#if DEBUG_STRESS_GC
+		collectGarbage();
+#endif
+	}
+
 	if (newSize == 0) {
 		free(pointer);
 		return NULL;
@@ -48,6 +60,16 @@ void* reallocate(void* pointer, size_t oldSize, size_t newSize) {
 	void* result = realloc(pointer, newSize);
 	if (result == NULL) exit(1); // Out of Memory
 	return result;
+}
+
+void collectGarbage() {
+#if DEBUG_LOG_GC
+	printf("-- gc begin\n");
+#endif
+
+#if DEBUG_LOG_GC
+	printf("-- gc end\n");
+#endif
 }
 
 void freeObjects(VM* vm) {

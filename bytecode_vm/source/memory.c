@@ -1,3 +1,4 @@
+#include "compiler.h"
 #include "memory.h"
 #include "vm.h"
 
@@ -45,10 +46,27 @@ static void freeObject(Obj* object) {
 	}
 }
 
+static void markRoots(VM* vm) {
+	for (Value* slot = vm->stack; slot < vm->stackTop; ++slot) {
+		markValue(*slot);
+	}
+
+	for (int i = 0; i < vm->frameCount; ++i) {
+		markObject((Obj*)vm->frames[i].closure);
+	}
+
+	for (ObjUpvalue* upvalue = vm->openUpvalues; upvalue != NULL; upvalue = upvalue->next) {
+		markObject((Obj*)upvalue);
+	}
+
+	markTable(&(vm->globals));
+	markCompilerRoots();
+}
+
 void* reallocate(void* pointer, size_t oldSize, size_t newSize) {
 	if (newSize > oldSize) {
 #if DEBUG_STRESS_GC
-		collectGarbage();
+		collectGarbage(g_vm);
 #endif
 	}
 
@@ -62,10 +80,27 @@ void* reallocate(void* pointer, size_t oldSize, size_t newSize) {
 	return result;
 }
 
-void collectGarbage() {
+void markObject(Obj* object) {
+	if (object == NULL) return;
+#if DEBUG_LOG_GC
+	printf("%p mark ", (void*)object);
+	printValue(OBJ_VAL(object));
+	printf("\n");
+#endif
+
+	object->isMarked = true;
+}
+
+void markValue(Value value) {
+	if (IS_OBJ(value)) markObject(AS_OBJ(value));
+}
+
+void collectGarbage(VM* vm) {
 #if DEBUG_LOG_GC
 	printf("-- gc begin\n");
 #endif
+
+	markRoots(vm);
 
 #if DEBUG_LOG_GC
 	printf("-- gc end\n");

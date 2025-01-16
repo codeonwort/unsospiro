@@ -38,3 +38,6 @@ void freeVM(VM* vm);
 InterpretResult interpret(VM* vm, const char* source);
 void push(VM* vm, Value value);
 Value pop(VM* vm);
+
+// #todo-gc: Temp var for GC. Don't use for other purpose.
+extern VM* g_vm;

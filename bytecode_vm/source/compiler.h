@@ -4,3 +4,4 @@
 #include "vm.h"
 
 ObjFunction* compile(VM* vm, const char* source);
+void markCompilerRoots();

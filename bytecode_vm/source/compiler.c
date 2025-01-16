@@ -1,4 +1,5 @@
 #include "compiler.h"
+#include "memory.h"
 #include "common.h"
 #include "scanner.h"
 #if DEBUG_PRINT_CODE
@@ -61,6 +62,9 @@ typedef struct Compiler {
 	Upvalue upvalues[UINT8_COUNT];
 	int scopeDepth;
 } Compiler;
+
+// #todo-gc: Temp var for GC. Don't use for other purpose.
+static Compiler* g_currentCompiler = NULL;
 
 // Used in compile() to pass parameters.
 typedef struct {
@@ -200,11 +204,14 @@ static void patchJump(Context* ctx, int offset) {
 }
 
 static void initCompiler(Context* ctx, Compiler* compiler, FunctionType type) {
+	g_currentCompiler = compiler;
+
 	compiler->enclosing = ctx->compiler;
-	compiler->function = newFunction(ctx->vm);
+	compiler->function = NULL;
 	compiler->type = type;
 	compiler->localCount = 0;
 	compiler->scopeDepth = 0;
+	compiler->function = newFunction(ctx->vm);
 
 	ctx->compiler = compiler;
 	ctx->currentChunk = &(compiler->function->chunk);
@@ -230,6 +237,7 @@ static ObjFunction* endCompiler(Context* ctx) {
 		disassembleChunk(ctx->currentChunk, function->name != NULL ? function->name->chars : "<script>");
 	}
 #endif
+	g_currentCompiler = g_currentCompiler->enclosing;
 	ctx->compiler = ctx->compiler->enclosing;
 	if (ctx->compiler != NULL) {
 		ctx->currentChunk = &(ctx->compiler->function->chunk);
@@ -826,4 +834,12 @@ ObjFunction* compile(VM* vm, const char* source) {
 
 	ObjFunction* function = endCompiler(&ctx);
 	return parser.hadError ? NULL : function;
+}
+
+void markCompilerRoots() {
+	Compiler* compiler = g_currentCompiler;
+	while (compiler != NULL) {
+		markObject((Obj*)compiler->function);
+		compiler = compiler->enclosing;
+	}
 }

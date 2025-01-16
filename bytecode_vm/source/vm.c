@@ -12,6 +12,8 @@
 #include <time.h>
 #include <stdlib.h>
 
+VM* g_vm = NULL;
+
 static void resetStack(VM* vm) {
 	vm->stackTop = vm->stack;
 	vm->frameCount = 0;
@@ -408,6 +410,8 @@ static Value readFileNative(VM* vm, int argCount, Value* args) {
 }
 
 void initVM(VM* vm) {
+	g_vm = vm;
+
 	resetStack(vm);
 	vm->objects = NULL;
 	initTable(&vm->globals);

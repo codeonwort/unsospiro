@@ -25,6 +25,11 @@ typedef struct VM_t {
 	Table strings; // Store all strings in a hash table for string interning
 	ObjUpvalue* openUpvalues;
 	Obj* objects;
+
+	// For GC
+	int grayCount;
+	int grayCapacity;
+	Obj** grayStack;
 } VM;
 
 typedef enum {

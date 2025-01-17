@@ -838,8 +838,9 @@ ObjFunction* compile(VM* vm, const char* source) {
 
 void markCompilerRoots() {
 	Compiler* compiler = g_currentCompiler;
+	VM* vm = g_vm;
 	while (compiler != NULL) {
-		markObject((Obj*)compiler->function);
+		markObject(vm, (Obj*)compiler->function);
 		compiler = compiler->enclosing;
 	}
 }

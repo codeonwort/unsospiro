@@ -108,6 +108,29 @@ static void traceReferences(VM* vm) {
 	}
 }
 
+static void sweep(VM* vm) {
+	Obj* previous = NULL;
+	Obj* object = vm->objects;
+	while (object != NULL) {
+		if (object->isMarked) {
+			// Blackened object is in usage and should not be freed.
+			object->isMarked = false; // Unmark so that GC can re-evaluate it next time.
+			previous = object;
+			object = object->next;
+		} else {
+			// Remove white object from list.
+			Obj* unreached = object;
+			object = object->next;
+			if (previous != NULL) {
+				previous->next = object;
+			} else {
+				vm->objects = object;
+			}
+			freeObject(unreached);
+		}
+	}
+}
+
 void* reallocate(void* pointer, size_t oldSize, size_t newSize) {
 	if (newSize > oldSize) {
 #if DEBUG_STRESS_GC
@@ -160,6 +183,7 @@ void collectGarbage(VM* vm) {
 
 	markRoots(vm);
 	traceReferences(vm);
+	sweep(vm);
 
 #if DEBUG_LOG_GC
 	printf("-- gc end\n");

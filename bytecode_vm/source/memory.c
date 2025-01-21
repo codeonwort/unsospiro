@@ -183,6 +183,7 @@ void collectGarbage(VM* vm) {
 
 	markRoots(vm);
 	traceReferences(vm);
+	tableRemoveWhite(vm, &(vm->strings));
 	sweep(vm);
 
 #if DEBUG_LOG_GC

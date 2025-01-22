@@ -414,6 +414,8 @@ void initVM(VM* vm) {
 
 	resetStack(vm);
 	vm->objects = NULL;
+	vm->bytesAllocated = 0;
+	vm->nextGC = 1024 * 1024; // #todo-gc: Hard-coded initial value
 
 	vm->grayCount = 0;
 	vm->grayCapacity = 0;

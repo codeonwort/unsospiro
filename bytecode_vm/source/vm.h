@@ -24,6 +24,9 @@ typedef struct VM_t {
 	Table globals; // Store global variables
 	Table strings; // Store all strings in a hash table for string interning
 	ObjUpvalue* openUpvalues;
+
+	size_t bytesAllocated;
+	size_t nextGC; // Threshold to trigger GC
 	Obj* objects;
 
 	// For GC

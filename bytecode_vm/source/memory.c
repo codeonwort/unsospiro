@@ -7,8 +7,10 @@
 #include <stdio.h>
 #endif
 
-
 #include <stdlib.h>
+
+// #todo-gc: Hard-coded grow factor
+#define GC_HEAP_GROW_FACTOR 2
 
 static void freeObject(Obj* object) {
 	switch (object->type) {
@@ -132,10 +134,17 @@ static void sweep(VM* vm) {
 }
 
 void* reallocate(void* pointer, size_t oldSize, size_t newSize) {
+	VM* vm = g_vm; // #todo-gc: remove global variable
+
+	vm->bytesAllocated += newSize - oldSize;
 	if (newSize > oldSize) {
 #if DEBUG_STRESS_GC
-		collectGarbage(g_vm);
+		collectGarbage(vm);
 #endif
+	}
+
+	if (vm->bytesAllocated > vm->nextGC) {
+		collectGarbage(vm);
 	}
 
 	if (newSize == 0) {
@@ -176,9 +185,14 @@ void markValue(VM* vm, Value value) {
 	if (IS_OBJ(value)) markObject(vm, AS_OBJ(value));
 }
 
+// throughput = x / (x + y) where x = user code execution time, y = GC time
+// latency = longest consecutive time chunk user program halts for GC
+// If GC is called too frequently, then throughput will be bad.
+// If GC is called too rarely, then latency will be bad.
 void collectGarbage(VM* vm) {
 #if DEBUG_LOG_GC
 	printf("-- gc begin\n");
+	size_t before = vm->bytesAllocated;
 #endif
 
 	markRoots(vm);
@@ -186,8 +200,12 @@ void collectGarbage(VM* vm) {
 	tableRemoveWhite(vm, &(vm->strings));
 	sweep(vm);
 
+	vm->nextGC = vm->bytesAllocated * GC_HEAP_GROW_FACTOR;
+
 #if DEBUG_LOG_GC
 	printf("-- gc end\n");
+	printf("   collected %zu bytes (from %zu to %zu) next at %zu\n",
+		before - vm->bytesAllocated, before, vm->bytesAllocated, vm->nextGC);
 #endif
 }
 

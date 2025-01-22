@@ -176,7 +176,7 @@ static void emitReturn(Context* ctx) {
 }
 
 static uint8_t makeConstant(Context* ctx, Value value) {
-	int constant = addConstant(ctx->currentChunk, value);
+	int constant = addConstant(ctx->vm, ctx->currentChunk, value);
 	if (constant > UINT8_MAX) {
 		error(ctx->parser, "Too many constants in one chunk.");
 		return 0;

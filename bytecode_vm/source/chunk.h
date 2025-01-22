@@ -3,6 +3,8 @@
 #include "common.h"
 #include "value.h"
 
+typedef struct VM_t VM;
+
 // Each operation is represented by one-byte opcode.
 typedef enum {
 	OP_CONSTANT,
@@ -48,4 +50,4 @@ typedef struct {
 void initChunk(Chunk* chunk);
 void freeChunk(Chunk* chunk);
 void writeChunk(Chunk* chunk, uint8_t byte, int line);
-int addConstant(Chunk* chunk, Value value); // Returns linear index of the constant in a constant array.
+int addConstant(VM* vm, Chunk* chunk, Value value); // Returns linear index of the constant in a constant array.

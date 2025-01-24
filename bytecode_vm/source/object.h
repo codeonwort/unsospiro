@@ -33,6 +33,7 @@ typedef enum {
 } ObjType;
 
 struct Obj {
+	// #todo: Compact layout
 	ObjType type;
 	bool isMarked;
 	struct Obj* next;

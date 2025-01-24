@@ -114,9 +114,11 @@ static void sweep(VM* vm) {
 	Obj* previous = NULL;
 	Obj* object = vm->objects;
 	while (object != NULL) {
+		// Blackened object is in usage and should not be freed.
 		if (object->isMarked) {
-			// Blackened object is in usage and should not be freed.
-			object->isMarked = false; // Unmark so that GC can re-evaluate it next time.
+			// Unmark so that GC can re-evaluate it next time.
+			// #todo-gc: More efficient way?
+			object->isMarked = false;
 			previous = object;
 			object = object->next;
 		} else {
@@ -195,6 +197,7 @@ void collectGarbage(VM* vm) {
 	size_t before = vm->bytesAllocated;
 #endif
 
+	// #todo-gc: Other GC algorithms (reference counting, Cheney's algorithm, Lisp 2 mark-compact, generational GC, ...)
 	markRoots(vm);
 	traceReferences(vm);
 	tableRemoveWhite(vm, &(vm->strings));

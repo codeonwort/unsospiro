@@ -14,6 +14,10 @@
 
 static void freeObject(Obj* object) {
 	switch (object->type) {
+		case OBJ_CLASS: {
+			FREE(ObjClass, object);
+			break;
+		}
 		case OBJ_CLOSURE: {
 			// A closure does not own its function, so does not free it.
 			// To free a function, all references to it should be gone first.
@@ -79,6 +83,11 @@ static void blackenObject(VM* vm, Obj* object) {
 #endif
 
 	switch (object->type) {
+		case OBJ_CLASS: {
+			ObjClass* klass = (ObjClass*)object;
+			markObject(vm, (Obj*)klass->name);
+			break;
+		}
 		case OBJ_CLOSURE: {
 			ObjClosure* closure = (ObjClosure*)object;
 			markObject(vm, (Obj*)closure->function);

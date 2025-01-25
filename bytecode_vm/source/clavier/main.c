@@ -1,3 +1,5 @@
+// Clavier is now a library. main is moved to another project.
+#if 0
 #include "common.h"
 #include "chunk.h"
 #include "vm.h"
@@ -26,37 +28,6 @@ int main(int argc, const char* argv[]) {
     }
 
     freeVM(&vm);
-
-#if 0
-    initVM(&vm);
-
-    Chunk chunk;
-    initChunk(&chunk);
-
-    // Hand-compile a constant instruction, for now.
-    int constant = addConstant(&chunk, 1.2);
-    writeChunk(&chunk, OP_CONSTANT, 123);
-    writeChunk(&chunk, constant, 123);
-
-    constant = addConstant(&chunk, 3.4);
-    writeChunk(&chunk, OP_CONSTANT, 123);
-    writeChunk(&chunk, constant, 123);
-
-    writeChunk(&chunk, OP_ADD, 123);
-
-    constant = addConstant(&chunk, 5.6);
-    writeChunk(&chunk, OP_CONSTANT, 123);
-    writeChunk(&chunk, constant, 123);
-
-    writeChunk(&chunk, OP_DIVIDE, 123);
-    writeChunk(&chunk, OP_NEGATE, 123);
-
-    writeChunk(&chunk, OP_RETURN, 123);
-    //disassembleChunk(&chunk, "test chunk");
-    interpret(&vm, &chunk);
-    freeVM(&vm);
-    freeChunk(&chunk);
-#endif
 
     return 0;
 }
@@ -111,3 +82,4 @@ static char* readFile(const char* path) {
     fclose(file);
     return buffer;
 }
+#endif

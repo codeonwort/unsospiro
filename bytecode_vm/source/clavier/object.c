@@ -53,6 +53,13 @@ ObjFunction* newFunction(VM* vm) {
 	return function;
 }
 
+ObjInstance* newInstance(VM* vm, ObjClass* klass) {
+	ObjInstance* instance = ALLOCATE_OBJ(vm, ObjInstance, OBJ_INSTANCE);
+	instance->klass = klass;
+	initTable(&(instance->fields));
+	return instance;
+}
+
 ObjNative* newNative(VM* vm, NativeFn function) {
 	ObjNative* native = ALLOCATE_OBJ(vm, ObjNative, OBJ_NATIVE);
 	native->function = function;
@@ -114,6 +121,7 @@ static void printFunction(ObjFunction* function) {
 		printf("<script>");
 		return;
 	}
+	// #todo: Replace all printf() with printf_s()
 	printf("<fn %s>", function->name->chars);
 }
 
@@ -127,6 +135,9 @@ void printObject(Value value) {
 			break;
 		case OBJ_FUNCTION:
 			printFunction(AS_FUNCTION(value));
+			break;
+		case OBJ_INSTANCE:
+			printf_s("%s instance", AS_INSTANCE(value)->klass->name->chars);
 			break;
 		case OBJ_NATIVE:
 			printf_s("<native fn>");

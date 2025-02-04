@@ -39,6 +39,12 @@ typedef enum {
 	OBJ_UPVALUE,
 } ObjType;
 
+// Base type for object representation in VM.
+// - Derived types include Obj as the first field.
+// Each derived type may contain additional fields. Those fields should be handled in:
+// - newXXX() for initialization.
+// - freeObject() for deallocation.
+// - blackenObject() for GC marking.
 struct Obj {
 	// #todo: Compact layout
 	ObjType type;
@@ -91,6 +97,7 @@ typedef struct {
 typedef struct {
 	Obj obj;
 	ObjString* name;
+	Table methods;
 } ObjClass;
 
 typedef struct {

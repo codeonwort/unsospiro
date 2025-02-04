@@ -138,6 +138,13 @@ static void closeUpvalues(VM* vm, Value* last) {
 	}
 }
 
+static void defineMethod(VM* vm, ObjString* name) {
+	Value method = peek(vm, 0);
+	ObjClass* klass = AS_CLASS(peek(vm, 1));
+	tableSet(&(klass->methods), name, method);
+	pop(vm);
+}
+
 static bool isFalsey(Value value) {
 	// #todo: Number 0 is falsey
 	return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value)) || (IS_NUMBER(value) && AS_NUMBER(value) == 0.0);
@@ -187,6 +194,10 @@ static InterpretResult run(VM* vm) {
 		printf("\n");
 		disassembleInstruction(&(frame->closure->function->chunk), (int)(frame->ip - frame->closure->function->chunk.code));
 #endif
+
+		// Our VM believes that instructions are valid.
+		// Other VMs like JVM support execution of pre-compiled bytecode.
+		// Such code could be malicious, so JVM validates it first.
 
 		uint8_t instruction;
 
@@ -391,6 +402,9 @@ static InterpretResult run(VM* vm) {
 				push(vm, OBJ_VAL(newClass(vm, READ_STRING())));
 				break;
 			}
+			case OP_METHOD:
+				defineMethod(vm, READ_STRING());
+				break;
 		}
 	}
 

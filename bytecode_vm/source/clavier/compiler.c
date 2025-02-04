@@ -638,16 +638,32 @@ static void function(Context* ctx, FunctionType type) {
 	}
 }
 
+static void method(Context* ctx) {
+	consume(ctx, TOKEN_IDENTIFIER, "Expect method name.");
+	uint8_t constant = identifierConstant(ctx, &(ctx->parser->previous));
+
+	FunctionType type = TYPE_FUNCTION;
+	function(ctx, type);
+	emitBytes(ctx, OP_METHOD, constant);
+}
+
 static void classDeclaration(Context* ctx) {
 	consume(ctx, TOKEN_IDENTIFIER, "Expect class name.");
+	Token className = ctx->parser->previous;
 	uint8_t nameConstant = identifierConstant(ctx, &(ctx->parser->previous));
 	declareVariable(ctx);
 
 	emitBytes(ctx, OP_CLASS, nameConstant);
 	defineVariable(ctx, nameConstant);
 
+	namedVariable(ctx, className, false);
 	consume(ctx, TOKEN_LEFT_BRACE, "Expect '{' before class body.");
+	// Don't support field declaration in class, so everything before final } is method.
+	while (!check(ctx->parser, TOKEN_RIGHT_BRACE) && !check(ctx->parser, TOKEN_EOF)) {
+		method(ctx);
+	}
 	consume(ctx, TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
+	emitByte(ctx, OP_POP);
 }
 
 static void funDeclaration(Context* ctx) {

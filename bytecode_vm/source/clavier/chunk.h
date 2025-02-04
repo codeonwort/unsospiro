@@ -6,6 +6,7 @@
 typedef struct VM_t VM;
 
 // Each operation is represented by one-byte opcode.
+// Each enum should be handled in disassembleInstruction() and run().
 typedef enum {
 	OP_CONSTANT,
 	OP_NIL,
@@ -40,6 +41,7 @@ typedef enum {
 	OP_CLOSE_UPVALUE,
 	OP_RETURN,
 	OP_CLASS,
+	OP_METHOD
 } OpCode;
 
 typedef struct {

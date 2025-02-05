@@ -75,6 +75,10 @@ static bool call(VM* vm, ObjClosure* closure, int argCount) {
 static bool callValue(VM* vm, Value callee, int argCount) {
 	if (IS_OBJ(callee)) {
 		switch (OBJ_TYPE(callee)) {
+			case OBJ_BOUND_METHOD: {
+				ObjBoundMethod* bound = AS_BOUND_METHOD(callee);
+				return call(vm, bound->method, argCount);
+			}
 			case OBJ_CLASS: {
 				ObjClass* klass = AS_CLASS(callee);
 				vm->stackTop[-argCount - 1] = OBJ_VAL(newInstance(vm, klass));
@@ -103,6 +107,20 @@ static bool callValue(VM* vm, Value callee, int argCount) {
 	}
 	runtimeError(vm, "Can only call functions and classes.");
 	return false;
+}
+
+static bool bindMethod(VM* vm, ObjClass* klass, ObjString* name) {
+	Value method;
+	if (!tableGet(&klass->methods, name, &method)) {
+		runtimeError(vm, "Undefined property '%s'.", name->chars);
+		return false;
+	}
+
+	ObjBoundMethod* bound = newBoundMethod(vm, peek(vm, 0), AS_CLOSURE(method));
+
+	pop(vm);
+	push(vm, OBJ_VAL(bound));
+	return true;
 }
 
 static ObjUpvalue* captureUpvalue(VM* vm, Value* local) {
@@ -284,8 +302,10 @@ static InterpretResult run(VM* vm) {
 					break;
 				}
 
-				runtimeError(vm, "Undefined property '%s'.", name->chars);
-				return INTERPRET_RUNTIME_ERROR;
+				if (!bindMethod(vm, instance->klass, name)) {
+					return INTERPRET_RUNTIME_ERROR;
+				}
+				break;
 			}
 			// #todo: Allow removing fields?
 			case OP_SET_PROPERTY: {

@@ -49,6 +49,7 @@ typedef struct {
 
 typedef enum {
 	TYPE_FUNCTION,
+	TYPE_METHOD,
 	TYPE_SCRIPT
 } FunctionType;
 
@@ -225,8 +226,13 @@ static void initCompiler(Context* ctx, Compiler* compiler, FunctionType type) {
 	Local* local = &(compiler->locals[compiler->localCount++]);
 	local->depth = 0;
 	local->isCaptured = false;
-	local->name.start = "";
-	local->name.length = 0;
+	if (type != TYPE_FUNCTION) {
+		local->name.start = "this";
+		local->name.length = 4;
+	} else {
+		local->name.start = "";
+		local->name.length = 0;
+	}
 }
 
 static ObjFunction* endCompiler(Context* ctx) {
@@ -512,6 +518,11 @@ static void variable(Context* ctx, bool canAssign) {
 	namedVariable(ctx, ctx->parser->previous, canAssign);
 }
 
+static void this_(Context* ctx, bool canAssign) {
+	// Compile 'this' as if it's local variable.
+	variable(ctx, false);
+}
+
 static void unary(Context* ctx, bool canAssign) {
 	TokenType operatorType = ctx->parser->previous.type;
 
@@ -560,7 +571,7 @@ ParseRule rules[] = {
 	[TOKEN_PRINT]         = {NULL,     NULL,   PREC_NONE},
 	[TOKEN_RETURN]        = {NULL,     NULL,   PREC_NONE},
 	[TOKEN_SUPER]         = {NULL,     NULL,   PREC_NONE},
-	[TOKEN_THIS]          = {NULL,     NULL,   PREC_NONE},
+	[TOKEN_THIS]          = {this_,    NULL,   PREC_NONE},
 	[TOKEN_TRUE]          = {literal,  NULL,   PREC_NONE},
 	[TOKEN_VAR]           = {NULL,     NULL,   PREC_NONE},
 	[TOKEN_WHILE]         = {NULL,     NULL,   PREC_NONE},
@@ -642,7 +653,7 @@ static void method(Context* ctx) {
 	consume(ctx, TOKEN_IDENTIFIER, "Expect method name.");
 	uint8_t constant = identifierConstant(ctx, &(ctx->parser->previous));
 
-	FunctionType type = TYPE_FUNCTION;
+	FunctionType type = TYPE_METHOD;
 	function(ctx, type);
 	emitBytes(ctx, OP_METHOD, constant);
 }

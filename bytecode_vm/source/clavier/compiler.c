@@ -64,6 +64,10 @@ typedef struct Compiler {
 	int scopeDepth;
 } Compiler;
 
+typedef struct ClassCompiler {
+	struct ClassCompiler* enclosing;
+} ClassCompiler;
+
 // #todo-gc: Temp var for GC. Don't use for other purpose.
 static Compiler* g_currentCompiler = NULL;
 
@@ -71,6 +75,7 @@ static Compiler* g_currentCompiler = NULL;
 typedef struct {
 	Scanner* scanner;
 	Compiler* compiler;
+	ClassCompiler* currentClass;
 	VM* vm;
 	Parser* parser;
 	Chunk* currentChunk;
@@ -519,6 +524,11 @@ static void variable(Context* ctx, bool canAssign) {
 }
 
 static void this_(Context* ctx, bool canAssign) {
+	if (ctx->currentClass == NULL) {
+		error(ctx->parser, "Can't use 'this' outside of a class.");
+		return;
+	}
+
 	// Compile 'this' as if it's local variable.
 	variable(ctx, false);
 }
@@ -667,6 +677,10 @@ static void classDeclaration(Context* ctx) {
 	emitBytes(ctx, OP_CLASS, nameConstant);
 	defineVariable(ctx, nameConstant);
 
+	ClassCompiler classCompiler;
+	classCompiler.enclosing = ctx->currentClass;
+	ctx->currentClass = &classCompiler;
+
 	namedVariable(ctx, className, false);
 	consume(ctx, TOKEN_LEFT_BRACE, "Expect '{' before class body.");
 	// Don't support field declaration in class, so everything before final } is method.
@@ -675,6 +689,8 @@ static void classDeclaration(Context* ctx) {
 	}
 	consume(ctx, TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
 	emitByte(ctx, OP_POP);
+
+	ctx->currentClass = ctx->currentClass->enclosing;
 }
 
 static void funDeclaration(Context* ctx) {
@@ -872,6 +888,7 @@ ObjFunction* compile(VM* vm, const char* source) {
 	ctx.scanner = &scanner;
 	ctx.vm = vm;
 	ctx.parser = &parser;
+	ctx.currentClass = NULL;
 	// A little trick to initialize ctx.compiler
 	// 1. Initialize later than ctx.vm
 	ctx.compiler = NULL; // 2. This null will be assigned to ctx->compiler->enclosing immediately

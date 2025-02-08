@@ -83,6 +83,15 @@ static bool callValue(VM* vm, Value callee, int argCount) {
 			case OBJ_CLASS: {
 				ObjClass* klass = AS_CLASS(callee);
 				vm->stackTop[-argCount - 1] = OBJ_VAL(newInstance(vm, klass));
+				Value initializer;
+				if (tableGet(&klass->methods, vm->initString, &initializer)) {
+					// Call initializer (constructor) if exist.
+					return call(vm, AS_CLOSURE(initializer), argCount);
+				} else if (argCount != 0) {
+					// Passing initializer arguments is invalid if initializer does not exist.
+					runtimeError(vm, "Expected 0 arguments but got %d.", argCount);
+					return false;
+				}
 				return true;
 			}
 			case OBJ_CLOSURE:
@@ -507,6 +516,9 @@ void initVM(VM* vm) {
 	initTable(&vm->globals);
 	initTable(&vm->strings);
 
+	vm->initString = NULL; // This is necessary as copyString() might trigger GC.
+	vm->initString = copyString(vm, "init", 4);
+
 	defineNative(vm, "clock", clockNative);
 	defineNative(vm, "readFile", readFileNative);
 }
@@ -514,6 +526,7 @@ void initVM(VM* vm) {
 void freeVM(VM* vm) {
 	freeTable(&vm->globals);
 	freeTable(&vm->strings);
+	vm->initString = NULL;
 	freeObjects(vm);
 }
 

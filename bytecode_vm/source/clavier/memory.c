@@ -79,6 +79,7 @@ static void markRoots(VM* vm) {
 
 	markTable(vm, &(vm->globals));
 	markCompilerRoots();
+	markObject(vm, (Obj*)vm->initString);
 }
 
 static void markArray(VM* vm, ValueArray* array) {

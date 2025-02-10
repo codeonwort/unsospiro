@@ -49,6 +49,7 @@ typedef struct {
 
 typedef enum {
 	TYPE_FUNCTION,
+	TYPE_INITIALIZER,
 	TYPE_METHOD,
 	TYPE_SCRIPT
 } FunctionType;
@@ -177,7 +178,12 @@ static int emitJump(Context* ctx, uint8_t instruction) {
 }
 
 static void emitReturn(Context* ctx) {
-	emitByte(ctx, OP_NIL); // If a function ends, it returns nil implicitly.
+	if (ctx->compiler->type == TYPE_INITIALIZER) {
+		emitBytes(ctx, OP_GET_LOCAL, 0);
+	} else {
+		emitByte(ctx, OP_NIL); // If a function ends, it returns nil implicitly.
+	}
+
 	emitByte(ctx, OP_RETURN);
 }
 
@@ -664,6 +670,10 @@ static void method(Context* ctx) {
 	uint8_t constant = identifierConstant(ctx, &(ctx->parser->previous));
 
 	FunctionType type = TYPE_METHOD;
+	if (ctx->parser->previous.length == 4 && memcmp(ctx->parser->previous.start, "init", 4) == 0) {
+		type = TYPE_INITIALIZER;
+	}
+
 	function(ctx, type);
 	emitBytes(ctx, OP_METHOD, constant);
 }

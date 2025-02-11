@@ -808,6 +808,10 @@ static void returnStatement(Context* ctx) {
 	if (match(ctx, TOKEN_SEMICOLON)) {
 		emitReturn(ctx);
 	} else {
+		if (ctx->compiler->type == TYPE_INITIALIZER) {
+			error(ctx->parser, "Can't return a value from an initializer.");
+		}
+
 		expression(ctx);
 		consume(ctx, TOKEN_SEMICOLON, "Expect ';' after return value.");
 		emitByte(ctx, OP_RETURN);

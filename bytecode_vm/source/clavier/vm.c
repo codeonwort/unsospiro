@@ -84,6 +84,7 @@ static bool callValue(VM* vm, Value callee, int argCount) {
 				ObjClass* klass = AS_CLASS(callee);
 				vm->stackTop[-argCount - 1] = OBJ_VAL(newInstance(vm, klass));
 				Value initializer;
+				// #todo: Finding initializer is O(1) but slow
 				if (tableGet(&klass->methods, vm->initString, &initializer)) {
 					// Call initializer (constructor) if exist.
 					return call(vm, AS_CLOSURE(initializer), argCount);
@@ -117,6 +118,34 @@ static bool callValue(VM* vm, Value callee, int argCount) {
 	}
 	runtimeError(vm, "Can only call functions and classes.");
 	return false;
+}
+
+static bool invokeFromClass(VM* vm, ObjClass* klass, ObjString* name, int argCount) {
+	Value method;
+	if (!tableGet(&klass->methods, name, &method)) {
+		runtimeError(vm, "Undefined property '%s'", name->chars);
+		return false;
+	}
+	return call(vm, AS_CLOSURE(method), argCount);
+}
+
+static bool invoke(VM* vm, ObjString* name, int argCount) {
+	Value receiver = peek(vm, argCount);
+
+	if (!IS_INSTANCE(receiver)) {
+		runtimeError(vm, "Only instances have methods.");
+		return false;
+	}
+
+	ObjInstance* instance = AS_INSTANCE(receiver);
+
+	Value value;
+	if (tableGet(&instance->fields, name, &value)) {
+		vm->stackTop[-argCount - 1] = value;
+		return callValue(vm, value, argCount);
+	}
+
+	return invokeFromClass(vm, instance->klass, name, argCount);
 }
 
 static bool bindMethod(VM* vm, ObjClass* klass, ObjString* name) {
@@ -393,6 +422,15 @@ static InterpretResult run(VM* vm) {
 					return INTERPRET_RUNTIME_ERROR;
 				}
 				frame = &(vm->frames[vm->frameCount - 1]);
+				break;
+			}
+			case OP_INVOKE: {
+				ObjString* method = READ_STRING();
+				int argCount = READ_BYTE();
+				if (!invoke(vm, method, argCount)) {
+					return INTERPRET_RUNTIME_ERROR;
+				}
+				frame = &vm->frames[vm->frameCount - 1];
 				break;
 			}
 			case OP_CLOSURE: {

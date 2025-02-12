@@ -460,6 +460,11 @@ static void dot(Context* ctx, bool canAssign) {
 	if (canAssign && match(ctx, TOKEN_EQUAL)) {
 		expression(ctx);
 		emitBytes(ctx, OP_SET_PROPERTY, name);
+	} else if (match(ctx, TOKEN_LEFT_PAREN)) {
+		// Optimize a case that accesses a method and immediately call it.
+		uint8_t argCount = argumentList(ctx);
+		emitBytes(ctx, OP_INVOKE, name);
+		emitByte(ctx, argCount);
 	} else {
 		emitBytes(ctx, OP_GET_PROPERTY, name);
 	}

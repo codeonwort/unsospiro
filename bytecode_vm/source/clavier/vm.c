@@ -470,6 +470,18 @@ static InterpretResult run(VM* vm) {
 				push(vm, OBJ_VAL(newClass(vm, READ_STRING())));
 				break;
 			}
+			case OP_INHERIT: {
+				Value superclass = peek(vm, 1);
+				if (!IS_CLASS(superclass)) {
+					runtimeError(vm, "Superclass must be a class.");
+					return INTERPRET_RUNTIME_ERROR;
+				}
+				ObjClass* subclass = AS_CLASS(peek(vm, 0));
+				// Copy-down inheritance. Possible because a class is closed once declared (can't add more methods afterwards).
+				tableAddAll(&AS_CLASS(superclass)->methods, &subclass->methods);
+				pop(vm); // subclass
+				break;
+			}
 			case OP_METHOD:
 				defineMethod(vm, READ_STRING());
 				break;

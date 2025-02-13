@@ -696,6 +696,18 @@ static void classDeclaration(Context* ctx) {
 	classCompiler.enclosing = ctx->currentClass;
 	ctx->currentClass = &classCompiler;
 
+	if (match(ctx, TOKEN_LESS)) {
+		consume(ctx, TOKEN_IDENTIFIER, "Expect superclass name.");
+		variable(ctx, false);
+
+		if (identifiersEqual(&className, &ctx->parser->previous)) {
+			error(ctx->parser, "A class can't inherit from itself.");
+		}
+
+		namedVariable(ctx, className, false);
+		emitByte(ctx, OP_INHERIT);
+	}
+
 	namedVariable(ctx, className, false);
 	consume(ctx, TOKEN_LEFT_BRACE, "Expect '{' before class body.");
 	// Don't support field declaration in class, so everything before final } is method.

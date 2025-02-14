@@ -361,6 +361,15 @@ static InterpretResult run(VM* vm) {
 				push(vm, value);
 				break;
 			}
+			case OP_GET_SUPER: {
+				ObjString* name = READ_STRING();
+				ObjClass* superclass = AS_CLASS(pop(vm));
+
+				if (!bindMethod(vm, superclass, name)) {
+					return INTERPRET_RUNTIME_ERROR;
+				}
+				break;
+			}
 			case OP_EQUAL: {
 				Value b = pop(vm);
 				Value a = pop(vm);

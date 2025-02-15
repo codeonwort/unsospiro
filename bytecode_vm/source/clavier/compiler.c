@@ -554,6 +554,15 @@ static void super_(Context* ctx, bool canAssign) {
 	uint8_t name = identifierConstant(ctx, &ctx->parser->previous);
 
 	namedVariable(ctx, syntheticToken("this"), false);
+	if (match(ctx, TOKEN_LEFT_PAREN)) {
+		uint8_t argCount = argumentList(ctx);
+		namedVariable(ctx, syntheticToken("super"), false);
+		emitBytes(ctx, OP_SUPER_INVOKE, name);
+		emitByte(ctx, argCount);
+	} else {
+		namedVariable(ctx, syntheticToken("super"), false);
+		emitBytes(ctx, OP_GET_SUPER, name);
+	}
 	namedVariable(ctx, syntheticToken("super"), false);
 	emitBytes(ctx, OP_GET_SUPER, name);
 }

@@ -6,6 +6,12 @@
 #include <string.h>
 
 bool valuesEqual(Value a, Value b) {
+#if NAN_BOXING
+	if (IS_NUMBER(a) && IS_NUMBER(b)) {
+		return AS_NUMBER(a) == AS_NUMBER(b); // NaN != NaN
+	}
+	return a == b;
+#else
 	if (a.type != b.type) return false;
 	switch (a.type) {
 		case VAL_BOOL:   return AS_BOOL(a) == AS_BOOL(b);
@@ -15,6 +21,7 @@ bool valuesEqual(Value a, Value b) {
 		case VAL_OBJ:    return AS_OBJ(a) == AS_OBJ(b);
 		default:         return false;
 	}
+#endif
 }
 
 void initValueArray(ValueArray* array) {
@@ -39,6 +46,17 @@ void freeValueArray(ValueArray* array) {
 }
 
 void printValue(Value value) {
+#if NAN_BOXING
+	if (IS_BOOL(value)) {
+		printf_s(AS_BOOL(value) ? "true" : "false");
+	} else if (IS_NIL(value)) {
+		printf_s("nil");
+	} else if (IS_NUMBER(value)) {
+		printf_s("%g", AS_NUMBER(value));
+	} else if (IS_OBJ(value)) {
+		printObject(value);
+	}
+#else
 	// %g specificer: https://en.cppreference.com/w/c/io/fprintf
 	switch (value.type) {
 		case VAL_BOOL:
@@ -54,4 +72,5 @@ void printValue(Value value) {
 			printObject(value);
 			break;
 	}
+#endif
 }

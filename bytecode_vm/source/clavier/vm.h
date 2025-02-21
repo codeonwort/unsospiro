@@ -1,5 +1,8 @@
 #pragma once
 
+#include "common.h"
+CPLUSPLUS_BEGIN
+
 #include "chunk.h"
 #include "object.h"
 #include "table.h"
@@ -50,3 +53,5 @@ Value pop(VM* vm);
 
 // #todo-gc: Temp var for GC. Don't use for other purpose.
 extern VM* g_vm;
+
+CPLUSPLUS_END
